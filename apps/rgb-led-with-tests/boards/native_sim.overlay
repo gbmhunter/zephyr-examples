@@ -1,0 +1,13 @@
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		in-gpios = <&gpio0 1 0>; /* Pin 1 */
+	};
+    mygpio: gpio1 {
+        out-gpios = <&gpio0 0 0>; /* Pin 0 */
+    };
+};
+
+&gpio0 {
+	ngpios = <2>;
+};

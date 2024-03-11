@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            // "name": "Cmake",
+            // "configurationProvider": "vector-of-bool.cmake-tools",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            // "includePath": [
+            //     "${workspaceFolder}/apps/cpp-app-framework/",
+            //     "${workspaceFolder}/zephyr/include/"
+            // ],
+        }
+    ],
+    "version": 4
+}
