@@ -54,11 +54,13 @@ public:
         std::function<void()> entryFn,
         std::function<void(T)> eventFn,
         std::function<void()> exitFn,
-        State * parent = nullptr) :
+        State * parent = nullptr,
+        char * name = nullptr) :
         entryFn(entryFn),
         eventFn(eventFn),
         exitFn(exitFn),
-        parent(parent)
+        parent(parent),
+        name(name)
     {
         // nothing to do
     }
@@ -68,6 +70,7 @@ public:
     std::function<void()> exitFn;
 
     State * parent;
+    char * name;
 };
 
 template<typename T>
@@ -105,7 +108,7 @@ public:
     }
 
     void addState(State<T> * state) {
-        __ASSERT_NO_MSG(this->numStates < this->maxNumStates);
+        __ASSERT(this->numStates < this->maxNumStates, "Exceeded max number of states of %u when trying to add state \"\".", this->maxNumStates, state->name ? state->name : "unknown");
         this->states[this->numStates] = state;
         this->numStates++;
     }

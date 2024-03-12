@@ -6,22 +6,25 @@
 
 LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 
+const uint8_t MAX_NUM_STATES = 10;
+
 Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *)) :
-        StateMachine(1, threadStack, 1024, threadFnAdapter),
+        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
         root(
             std::bind(&Led::Root_Entry, this),
             std::bind(&Led::Root_Event, this, std::placeholders::_1),
-            std::bind(&Led::Root_Exit, this)),
+            std::bind(&Led::Root_Exit, this),
+            nullptr, "Root"),
         off(
             std::bind(&Led::Off_Entry, this),
             std::bind(&Led::Off_Event, this, std::placeholders::_1),
             std::bind(&Led::Off_Exit, this),
-            &root),
+            &root, "Off"),
         on(
             std::bind(&Led::On_Entry, this),
             std::bind(&Led::On_Event, this, std::placeholders::_1),
             std::bind(&Led::On_Exit, this),
-            &root)
+            &root, "On")
     {
     LOG_INF("Led created\n");
 
