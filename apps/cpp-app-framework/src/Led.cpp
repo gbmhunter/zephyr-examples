@@ -11,7 +11,11 @@ Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, 
         off(
             std::bind(&Led::Off_Entry, this),
             std::bind(&Led::Off_Event, this, std::placeholders::_1),
-            std::bind(&Led::Off_Exit, this))
+            std::bind(&Led::Off_Exit, this)),
+        on(
+            std::bind(&Led::On_Entry, this),
+            std::bind(&Led::On_Event, this, std::placeholders::_1),
+            std::bind(&Led::On_Exit, this))
     {
     LOG_INF("Led created\n");
 
@@ -31,14 +35,39 @@ void Led::turnOn() {
     sendEvent(LedEvent(LedEventId::ON, nullptr));
 }
 
+//============================================================
+// STATE: Off
+//============================================================
+
 void Led::Off_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
 void Led::Off_Event(LedEvent event) {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
+
+    if (event.id == LedEventId::ON) {
+        // Transition to On state
+        transitionTo(&on);
+    }
 }
 
 void Led::Off_Exit() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+}
+
+//============================================================
+// STATE: On
+//============================================================
+
+void Led::On_Entry() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+}
+
+void Led::On_Event(LedEvent event) {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+}
+
+void Led::On_Exit() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }

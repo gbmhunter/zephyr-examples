@@ -28,6 +28,8 @@ public:
         this->maxNumStates = maxNumStates;
         this->states = static_cast<State<T>**>(k_malloc(this->maxNumStates * sizeof(State<T>*)));
 
+        this->nextState = nullptr;
+
         // Create message queue for receiving messages
         const uint8_t sizeOfMsg = 10;
         const uint8_t numMsgs = 10;
@@ -82,12 +84,24 @@ public:
 
             // Call the event handler for the current state
             this->currentState->eventFn(event);
-            // k_msleep(1000);
+
+            // If the user has requested a state transition, perform it now
+            if (this->nextState != nullptr) {
+                this->currentState->exitFn();
+                this->currentState = this->nextState;
+                this->currentState->entryFn();
+                this->nextState = nullptr;
+            }
         }
     }
 
     void sendEvent(T event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
+    }
+
+    void transitionTo(State<T> * state)  {
+        // Save state to transition to
+        this->nextState = state;
     }
 
 
@@ -96,6 +110,7 @@ private:
     uint8_t numStates;
     State<T> ** states;
     State<T> * currentState;
+    State<T> * nextState;
 
     char * msgQueueBuffer;
     struct k_msgq msgQueue;
