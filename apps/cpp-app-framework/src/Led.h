@@ -8,7 +8,8 @@
 
 enum class LedEventId {
     ON,
-    OFF
+    OFF,
+    TIMER_EXPIRED,
 };
 
 class LedEvent {
@@ -45,4 +46,6 @@ class Led : public StateMachine<LedEvent> {
         void On_Entry();
         void On_Event(LedEvent event);
         void On_Exit();
+
+        Timer<LedEvent> timer;
 };

@@ -21,6 +21,7 @@ Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, 
 
 
     addState(&off);
+    addTimer(&timer);
 
     // Setup initial transition
     initialTransition(&off);
@@ -62,6 +63,11 @@ void Led::Off_Exit() {
 
 void Led::On_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
+
+    // Start timer
+    LedEvent event;
+    event.id = LedEventId::TIMER_EXPIRED;
+    timer.start(k_ms_to_ticks_floor64(5*1000), event);
 }
 
 void Led::On_Event(LedEvent event) {

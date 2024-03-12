@@ -22,10 +22,12 @@ int main(void) {
     led.start();
     // auto sm = StateMachine(10);
 
+    // printf("Hello, world!\n");
+    k_msleep(1000);
+    led.turnOn();
+
     while (1) {
-        printf("Hello, world!\n");
         k_msleep(1000);
-        led.turnOn();
     }
     return 0;
 }
