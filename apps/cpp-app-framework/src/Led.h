@@ -7,6 +7,7 @@
 #include "StateMachine.h"
 
 enum class LedEventId {
+    TERMINATE_THREAD,
     ON,
     OFF,
     TIMER_EXPIRED,

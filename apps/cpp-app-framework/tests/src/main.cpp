@@ -41,5 +41,5 @@ ZTEST(framework_tests, test_assert)
 
 	auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
-    // led.start();
+    led.start();
 }

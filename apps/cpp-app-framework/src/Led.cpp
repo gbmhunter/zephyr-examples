@@ -48,15 +48,16 @@ void Led::turnOn() {
 //============================================================
 
 void Led::Root_Entry() {
-    LOG_INF("%s() called", __PRETTY_FUNCTION__);
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
 void Led::Root_Event(LedEvent event) {
-    LOG_INF("%s() called", __PRETTY_FUNCTION__);
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+    return;
 }
 
 void Led::Root_Exit() {
-    LOG_INF("%s() called", __PRETTY_FUNCTION__);
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
 //============================================================
@@ -73,7 +74,12 @@ void Led::Off_Event(LedEvent event) {
     if (event.id == LedEventId::ON) {
         // Transition to On state
         transitionTo(&on);
+        
+        // result.nextState = &on;
+
+        return;
     }
+    return;
 }
 
 void Led::Off_Exit() {
@@ -95,6 +101,7 @@ void Led::On_Entry() {
 
 void Led::On_Event(LedEvent event) {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
+    return;
 }
 
 void Led::On_Exit() {
