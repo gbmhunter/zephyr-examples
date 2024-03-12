@@ -25,6 +25,7 @@ int main(void) {
     while (1) {
         printf("Hello, world!\n");
         k_msleep(1000);
+        led.turnOn();
     }
     return 0;
 }

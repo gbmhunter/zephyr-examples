@@ -8,7 +8,10 @@ LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 
 Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *)) :
         StateMachine(1, threadStack, 1024, threadFnAdapter),
-        off(std::bind(&Led::Off_Entry, this))
+        off(
+            std::bind(&Led::Off_Entry, this),
+            std::bind(&Led::Off_Event, this, std::placeholders::_1),
+            std::bind(&Led::Off_Exit, this))
     {
     LOG_INF("Led created\n");
 
@@ -18,14 +21,14 @@ Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, 
     // Setup initial transition
     initialTransition(&off);
 
-    run();
+    // run();
 }
 
 void Led::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    sendEvent(1);
+    sendEvent(LedEvent(LedEventId::ON, nullptr));
 }
 
 void Led::Off_Entry() {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstring>
+
 #include <zephyr/kernel.h>
 
 #include "StateMachine.h"
@@ -10,18 +12,31 @@ enum class LedEventId {
 };
 
 class LedEvent {
+public:
     LedEventId id;
-    char data[10];
+    uint8_t data[10];
+
+    LedEvent() {
+        this->id = LedEventId::OFF;
+        memset(this->data, 0, 10);
+    }
+
+    LedEvent(LedEventId id, const char * data) {
+        this->id = id;
+        if (data != nullptr) {
+            memcpy(this->data, data, 10);
+        }
+    }
 };
 
-class Led : public StateMachine {
+class Led : public StateMachine<LedEvent> {
     public:
         Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *));
 
         void turnOn();
 
     private:
-        State off;
+        State<LedEvent> off;
         // StateMachine sm;
 
         void Off_Entry();
