@@ -24,6 +24,8 @@ class StateMachine {
 
     StateMachine(uint8_t maxNumStates, z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *));
 
+    void start();
+
     void addState(State * state);
 
     void initialTransition(State * state);
@@ -31,6 +33,8 @@ class StateMachine {
     void run();
 
     void threadFn();
+
+    void sendEvent(uint8_t event);
 
     private:
         uint8_t maxNumStates;

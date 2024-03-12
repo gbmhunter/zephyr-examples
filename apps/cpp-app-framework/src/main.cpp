@@ -19,6 +19,7 @@ int main(void) {
 
     auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
+    led.start();
     // auto sm = StateMachine(10);
 
     while (1) {

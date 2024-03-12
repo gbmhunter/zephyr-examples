@@ -17,9 +17,15 @@ StateMachine::StateMachine(uint8_t maxNumStates, z_thread_stack_element * thread
                                     threadStackSize_B,
                                     threadFnAdapter,
                                     NULL, NULL, NULL,
-                                    5, 0, K_NO_WAIT);
+                                    5, 0,
+                                    K_FOREVER); // Don't start the thread yet
 
     printf("StateMachine created\n");
+}
+
+void StateMachine::start() {
+    printf("StateMachine::start\n");
+    k_thread_start(&this->thread);
 }
 
 void StateMachine::addState(State * state) {
@@ -45,4 +51,8 @@ void StateMachine::threadFn() {
         printf("StateMachine::threadFn while\n");
         k_msleep(1000);
     }
+}
+
+void StateMachine::sendEvent(uint8_t event) {
+    k_msgq_put(&msgQueue, &event, K_NO_WAIT);
 }
