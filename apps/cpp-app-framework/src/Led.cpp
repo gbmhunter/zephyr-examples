@@ -8,14 +8,20 @@ LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 
 Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *)) :
         StateMachine(1, threadStack, 1024, threadFnAdapter),
+        root(
+            std::bind(&Led::Root_Entry, this),
+            std::bind(&Led::Root_Event, this, std::placeholders::_1),
+            std::bind(&Led::Root_Exit, this)),
         off(
             std::bind(&Led::Off_Entry, this),
             std::bind(&Led::Off_Event, this, std::placeholders::_1),
-            std::bind(&Led::Off_Exit, this)),
+            std::bind(&Led::Off_Exit, this),
+            &root),
         on(
             std::bind(&Led::On_Entry, this),
             std::bind(&Led::On_Event, this, std::placeholders::_1),
-            std::bind(&Led::On_Exit, this))
+            std::bind(&Led::On_Exit, this),
+            &root)
     {
     LOG_INF("Led created\n");
 
@@ -25,8 +31,6 @@ Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, 
 
     // Setup initial transition
     initialTransition(&off);
-
-    // run();
 }
 
 void Led::turnOn() {
@@ -34,6 +38,22 @@ void Led::turnOn() {
 
     // Send event to state machine
     sendEvent(LedEvent(LedEventId::ON, nullptr));
+}
+
+//============================================================
+// STATE: Root
+//============================================================
+
+void Led::Root_Entry() {
+    LOG_INF("%s() called", __PRETTY_FUNCTION__);
+}
+
+void Led::Root_Event(LedEvent event) {
+    LOG_INF("%s() called", __PRETTY_FUNCTION__);
+}
+
+void Led::Root_Exit() {
+    LOG_INF("%s() called", __PRETTY_FUNCTION__);
 }
 
 //============================================================

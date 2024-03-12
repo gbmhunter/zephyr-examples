@@ -5,6 +5,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+const uint8_t MAX_NUM_NESTED_STATES = 10;
+
 template<typename T>
 class Timer {
 public:
@@ -48,15 +50,24 @@ public:
 template<typename T>
 class State {
 public:
-    State(std::function<void()> entryFn, std::function<void(T)> eventFn, std::function<void()> exitFn) {
-        this->entryFn = entryFn;
-        this->eventFn = eventFn;
-        this->exitFn = exitFn;
+    State(
+        std::function<void()> entryFn,
+        std::function<void(T)> eventFn,
+        std::function<void()> exitFn,
+        State * parent = nullptr) :
+        entryFn(entryFn),
+        eventFn(eventFn),
+        exitFn(exitFn),
+        parent(parent)
+    {
+        // nothing to do
     }
 
     std::function<void()> entryFn;
     std::function<void(T)> eventFn;
     std::function<void()> exitFn;
+
+    State * parent;
 };
 
 template<typename T>
@@ -70,6 +81,7 @@ public:
     {
         this->maxNumStates = maxNumStates;
         this->states = static_cast<State<T>**>(k_malloc(this->maxNumStates * sizeof(State<T>*)));
+
 
         // Create message queue for receiving messages
         const uint8_t sizeOfMsg = 10;
@@ -109,8 +121,22 @@ public:
     void threadFn()  {
         printf("Thread function for SM started...\n");
 
-        // Perform initial transition
-        this->currentState->entryFn();
+        // Perform initial transition. Call the top-most state entry function
+        // first
+        std::array<State<T>*, MAX_NUM_NESTED_STATES> exitStateStack;
+        State<T>* currentState = this->currentState;
+        int stackIndex = 0;
+        while (currentState != nullptr) {
+            exitStateStack[stackIndex++] = currentState;
+            currentState = currentState->parent;
+            // Make sure we don't exceed the make number of nested states
+            __ASSERT_NO_MSG(stackIndex < MAX_NUM_NESTED_STATES);
+        }
+
+        // Call entry functions from top to bottom
+        for (int i = stackIndex - 1; i >= 0; i--) {
+            exitStateStack[i]->entryFn();
+        }
 
         while (1) {
 
@@ -153,9 +179,53 @@ public:
 
         // If the user has requested a state transition, perform it now
         if (this->nextState != nullptr) {
-            this->currentState->exitFn();
-            this->currentState = this->nextState;
-            this->currentState->entryFn();
+            // We need to find the common parent of the current state and the
+            // next state.
+            State<T> * commonParentState = this->currentState;
+            State<T> * nextState = this->nextState;
+            while (commonParentState != nullptr) {
+                State<T> * parentState = nextState;
+                while (parentState != nullptr) {
+                    if (commonParentState == parentState) {
+                        break;
+                    }
+                    parentState = parentState->parent;
+                }
+                if (parentState != nullptr) {
+                    break;
+                }
+                commonParentState = commonParentState->parent;
+            }
+
+            // At this point commonParentState should either point to the
+            // common parent, or be nullptr, which means there was no
+            // common parent
+            printk("Common parent state: %p\n", commonParentState);
+
+            // Now call the exit functions from child to common parent
+            State<T> * currentState = this->currentState;
+            while (currentState != commonParentState) {
+                currentState->exitFn();
+                currentState = currentState->parent;
+            }
+
+            // Now call the entry functions from common parent to child
+            std::array<State<T>*, MAX_NUM_NESTED_STATES> entryStateStack;
+            currentState = this->nextState;
+            int stackIndex = 0;
+            while (currentState != commonParentState) {
+                entryStateStack[stackIndex++] = currentState;
+                currentState = currentState->parent;
+                // Make sure we don't exceed the make number of nested states
+                __ASSERT_NO_MSG(stackIndex < MAX_NUM_NESTED_STATES);
+            }
+
+            // Call entry functions from top to bottom
+            for (int i = stackIndex - 1; i >= 0; i--) {
+                entryStateStack[i]->entryFn();
+            }
+
+            // Clear out the next state pointer, we've handled it
             this->nextState = nullptr;
         }
     }

@@ -37,6 +37,12 @@ class Led : public StateMachine<LedEvent> {
         void turnOn();
 
     private:
+
+        State<LedEvent> root;
+        void Root_Entry();
+        void Root_Event(LedEvent event);
+        void Root_Exit();
+
         State<LedEvent> off;
         void Off_Entry();
         void Off_Event(LedEvent event);
