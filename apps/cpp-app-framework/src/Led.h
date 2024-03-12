@@ -41,17 +41,17 @@ class Led : public StateMachine<LedEvent> {
 
         State<LedEvent> root;
         void Root_Entry();
-        void Root_Event(LedEvent event);
+        EventFnResult<LedEvent> Root_Event(LedEvent event);
         void Root_Exit();
 
         State<LedEvent> off;
         void Off_Entry();
-        void Off_Event(LedEvent event);
+        EventFnResult<LedEvent> Off_Event(LedEvent event);
         void Off_Exit();
 
         State<LedEvent> on;
         void On_Entry();
-        void On_Event(LedEvent event);
+        EventFnResult<LedEvent> On_Event(LedEvent event);
         void On_Exit();
 
         Timer<LedEvent> timer;

@@ -56,7 +56,7 @@ public:
     /**
      * Set to true if you want to stop the event from propagating to the parent state.
     */
-    bool stopPropagation;
+    bool m_stopPropagation;
 
     /**
      * Assign to a state if you want to transition to a new state. If this is non-null, then
@@ -66,17 +66,25 @@ public:
     State<T> * m_nextState;
 
     EventFnResult() :
-        stopPropagation(false),
+        m_stopPropagation(false),
         m_nextState(nullptr)
     {
         // nothing to do
     }
 
     EventFnResult(State<T> * m_nextState) :
-        stopPropagation(true),
+        m_stopPropagation(true),
         m_nextState(m_nextState)
     {
         // nothing to do
+    }
+
+    void nextState(State<T> * nextState) {
+        this->m_nextState = nextState;
+    }
+
+    void stopPropagation() {
+        this->m_stopPropagation = true;
     }
 };
 
@@ -85,7 +93,7 @@ class State {
 public:
     State(
         std::function<void()> entryFn,
-        std::function<void(T)> eventFn,
+        std::function<EventFnResult<T>(T)> eventFn,
         std::function<void()> exitFn,
         State * parent = nullptr,
         const char * name = nullptr) :
@@ -99,7 +107,7 @@ public:
     }
 
     std::function<void()> entryFn;
-    std::function<void(T)> eventFn;
+    std::function<EventFnResult<T>(T)> eventFn;
     std::function<void()> exitFn;
 
     State * parent;
@@ -194,7 +202,9 @@ public:
             }
 
 
-            // Block on message queue
+            // Block on message queue, providing the correct timeout so that if
+            // an event is not received, we handle the next timer timeout at the correct
+            // time.
             T event;
             int queueRc = k_msgq_get(&msgQueue, &event, timeToWait);
 
@@ -218,28 +228,27 @@ public:
         State<T> * stateToProcess = this->currentState;
         while (stateToProcess != nullptr) {
             // Reset variables which might get changed when event functions are called
-            this->m_nextState = nullptr;
-            this->m_stopPropagation = false;
-            stateToProcess->eventFn(event);
-            if (m_nextState != nullptr) {
-                executeTransition(m_nextState);
-                m_nextState = nullptr;
+            // this->m_nextState = nullptr;
+            // this->m_stopPropagation = false;
+            EventFnResult<T> result = stateToProcess->eventFn(event);
+            if (result.m_nextState != nullptr) {
+                executeTransition(result.m_nextState);
                 return;
             }
-            if (m_stopPropagation) {
+            if (result.m_stopPropagation) {
                 return;
             }
             stateToProcess = stateToProcess->parent;
         }
     }
 
-    void executeTransition(State<T> * m_nextState)  {
+    void executeTransition(State<T> * nextState) {
         // We need to find the common parent of the current state and the
         // next state.
         State<T> * commonParentState = this->currentState;
         // State<T> * m_nextState = this->m_nextState;
         while (commonParentState != nullptr) {
-            State<T> * parentState = m_nextState;
+            State<T> * parentState = nextState;
             while (parentState != nullptr) {
                 if (commonParentState == parentState) {
                     break;
@@ -267,7 +276,7 @@ public:
         // Now call the entry functions from one below common parent (common parent is not exited/entered) to child,
         // first we need to build up a stack
         std::array<State<T>*, MAX_NUM_NESTED_STATES> entryStateStack;
-        currentState = m_nextState;
+        currentState = nextState;
         int stackIndex = 0;
         while (currentState != commonParentState) {
             entryStateStack[stackIndex++] = currentState;
@@ -280,6 +289,9 @@ public:
         for (int i = stackIndex - 1; i >= 0; i--) {
             entryStateStack[i]->entryFn();
         }
+
+        // Finally, update the current state
+        this->currentState = nextState;
     }
 
     void sendEvent(T event)  {
