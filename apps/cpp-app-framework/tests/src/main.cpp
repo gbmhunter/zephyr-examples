@@ -39,7 +39,14 @@ ZTEST(framework_tests, test_assert)
 	zassert_equal(1, 1, "1 was not equal to 1");
 	zassert_equal_ptr(NULL, NULL, "NULL was not equal to NULL");
 
+	printf("Creating Led object\n");
 	auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
+	printf("Done creating Led object\n");
     led.start();
+
+	k_msleep(1000);
+
+	led.terminateThread();
+	led.join();
 }

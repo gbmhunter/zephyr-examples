@@ -26,8 +26,13 @@ int main(void) {
     k_msleep(1000);
     led.turnOn();
 
-    while (1) {
-        k_msleep(1000);
-    }
+    k_msleep(1000);
+
+    printf("Terminating thread\n");
+    led.terminateThread();
+    printf("Joining thread\n");
+    led.join();
+    printf("main() returning...\n");
+
     return 0;
 }

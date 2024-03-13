@@ -122,12 +122,12 @@ class StateMachine {
 public:
 
     StateMachine(uint8_t maxNumStates, z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *)) :
+        m_numStates(0),
+        m_maxNumStates(maxNumStates),
         m_nextState(nullptr),
         timer(nullptr)
     {
-        this->maxNumStates = maxNumStates;
-        this->states = static_cast<State<T>**>(k_malloc(this->maxNumStates * sizeof(State<T>*)));
-
+        this->states = static_cast<State<T>**>(k_malloc(this->m_maxNumStates * sizeof(State<T>*)));
 
         // Create message queue for receiving messages
         const uint8_t sizeOfMsg = 10;
@@ -150,10 +150,14 @@ public:
         k_thread_start(&this->thread);
     }
 
+    void join() {
+        k_thread_join(&this->thread, K_FOREVER);
+    }
+
     void addState(State<T> * state) {
-        __ASSERT(this->numStates < this->maxNumStates, "Exceeded max number of states of %u when trying to add state \"\".", this->maxNumStates, state->name ? state->name : "unknown");
-        this->states[this->numStates] = state;
-        this->numStates++;
+        __ASSERT(this->m_numStates < this->m_maxNumStates, "Exceeded max number of states of %u when trying to add state \"\".", this->m_maxNumStates, state->name ? state->name : "unknown");
+        this->states[this->m_numStates] = state;
+        this->m_numStates++;
     }
 
     void addTimer(Timer<T> * timer) {
@@ -186,6 +190,8 @@ public:
 
         while (1) {
 
+            k_msleep(1000);
+
             // Calculate time to wait for next timeout event
             k_timeout_t timeToWait = K_FOREVER;
             if (this->timer != nullptr && this->timer->isRunning()) {
@@ -217,6 +223,11 @@ public:
                 // Update timer
                 this->timer->incrementNextFireTime();
             }
+            if (m_terminateThread) {
+                // This will return from the thread function, which terminates it.
+                printf("Returning from thread function...\n");
+                return;
+            }
             
         }
     }
@@ -228,9 +239,14 @@ public:
         State<T> * stateToProcess = this->currentState;
         while (stateToProcess != nullptr) {
             // Reset variables which might get changed when event functions are called
+            m_terminateThread = false;
             m_nextState = nullptr;
             m_stopPropagation = false;
             stateToProcess->eventFn(event);
+            if (m_terminateThread) {
+                printf("Terminate thread requested.\n");
+                return;
+            }
             if (m_nextState != nullptr) {
                 executeTransition(m_nextState);
                 return;
@@ -310,15 +326,20 @@ public:
         this->m_stopPropagation = true;
     }
 
+    void terminateThreadSm()  {
+        this->m_terminateThread = true;
+    }
 
 private:
-    uint8_t maxNumStates;
-    uint8_t numStates;
+    uint8_t m_numStates;
+    uint8_t m_maxNumStates;
     State<T> ** states;
     State<T> * currentState;
 
+    // Variables that can be set in state functions
     State<T> * m_nextState;
     bool m_stopPropagation;
+    bool m_terminateThread;
 
     char * msgQueueBuffer;
     struct k_msgq msgQueue;

@@ -37,6 +37,8 @@ class Led : public StateMachine<LedEvent> {
 
         void turnOn();
 
+        void terminateThread();
+
     private:
 
         State<LedEvent> root;
