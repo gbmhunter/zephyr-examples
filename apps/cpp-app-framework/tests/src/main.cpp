@@ -1,8 +1,10 @@
 #include <zephyr/ztest.h>
 
 // #include "RgbLed.h"
+#include "catch.hpp"
 
 #include "Led.h"
+#include "StateMachine.h"
 
 ZTEST_SUITE(framework_tests, NULL, NULL, NULL, NULL, NULL);
 
@@ -24,6 +26,28 @@ void ledThreadFnAdapter(void *, void *, void *) {
     l_led->sm.threadFn();
 }
 
+enum class TestEventId {
+	TEST,
+};
+
+class TestEvent {
+public:
+    TestEventId id;
+    uint8_t data[10];
+
+    TestEvent() {
+        this->id = TestEventId::TEST;
+        memset(this->data, 0, 10);
+    }
+
+    TestEvent(TestEventId id, const char * data) {
+        this->id = id;
+        if (data != nullptr) {
+            memcpy(this->data, data, 10);
+        }
+    }
+};
+
 /**
  * @brief Test Asserts
  *
@@ -39,14 +63,17 @@ ZTEST(framework_tests, test_assert)
 	zassert_equal(1, 1, "1 was not equal to 1");
 	zassert_equal_ptr(NULL, NULL, "NULL was not equal to NULL");
 
-	printf("Creating Led object\n");
-	auto led = Led(ledThreadStack, &ledThreadFnAdapter);
-    l_led = &led;
-	printf("Done creating Led object\n");
-    led.sm.start();
+	printf("Creating state machine...\n");
+	// auto led = Led(ledThreadStack, &ledThreadFnAdapter);
+    // l_led = &led;
+	// printf("Done creating Led object\n");
+    // led.sm.start();
 
-	k_msleep(1000);
+	// k_msleep(1000);
 
-	led.terminateThread();
-	led.sm.join();
+	// led.terminateThread();
+	// led.sm.join();
+
+
+	auto sm = StateMachine<TestEvent>(10, ledThreadStack, 1024, &ledThreadFnAdapter);
 }
