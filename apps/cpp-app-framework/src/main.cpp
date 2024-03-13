@@ -12,14 +12,14 @@ Led * l_led = nullptr;
 
 void ledThreadFnAdapter(void *, void *, void *) {
     printf("ledThreadFnAdapter\n");
-    l_led->threadFn();
+    l_led->sm.threadFn();
 }
 
 int main(void) {
 
     auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
-    led.start();
+    led.sm.start();
     // auto sm = StateMachine(10);
 
     // printf("Hello, world!\n");
@@ -31,7 +31,7 @@ int main(void) {
     printf("Terminating thread\n");
     led.terminateThread();
     printf("Joining thread\n");
-    led.join();
+    led.sm.join();
     printf("main() returning...\n");
 
     return 0;

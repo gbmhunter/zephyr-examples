@@ -31,15 +31,17 @@ public:
     }
 };
 
-class Led : public StateMachine<LedEvent> {
+class Led {
     public:
         Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *));
 
         void turnOn();
 
         void terminateThread();
+        StateMachine<LedEvent> sm;
 
     private:
+
 
         State<LedEvent> root;
         void Root_Entry();

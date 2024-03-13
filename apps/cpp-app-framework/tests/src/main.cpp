@@ -21,7 +21,7 @@ Led * l_led = nullptr;
 
 void ledThreadFnAdapter(void *, void *, void *) {
     printf("ledThreadFnAdapter\n");
-    l_led->threadFn();
+    l_led->sm.threadFn();
 }
 
 /**
@@ -43,10 +43,10 @@ ZTEST(framework_tests, test_assert)
 	auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
 	printf("Done creating Led object\n");
-    led.start();
+    led.sm.start();
 
 	k_msleep(1000);
 
 	led.terminateThread();
-	led.join();
+	led.sm.join();
 }
