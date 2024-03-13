@@ -51,7 +51,7 @@ void Led::Root_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-EventFnResult<LedEvent> Led::Root_Event(LedEvent event) {
+void Led::Root_Event(LedEvent event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
 
 
@@ -64,7 +64,7 @@ EventFnResult<LedEvent> Led::Root_Event(LedEvent event) {
     //     return result;
     // }
 
-    return EventFnResult<LedEvent>();
+    return;
 }
 
 void Led::Root_Exit() {
@@ -72,14 +72,14 @@ void Led::Root_Exit() {
 }
 
 //============================================================
-// STATE: Off
+// STATE: Root/Off
 //============================================================
 
 void Led::Off_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-EventFnResult<LedEvent> Led::Off_Event(LedEvent event) {
+void Led::Off_Event(LedEvent event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
 
     if (event.id == LedEventId::ON) {
@@ -87,11 +87,12 @@ EventFnResult<LedEvent> Led::Off_Event(LedEvent event) {
         // transitionTo(&on);
         
         // result.nextState = &on;
-        EventFnResult<LedEvent> result;
-        result.nextState(&on);
-        return result;
+        // EventFnResult<LedEvent> result;
+        // result.nextState(&on);
+        queueTransition(&on);
+        return;
     }
-    return EventFnResult<LedEvent>();
+    return;
 }
 
 void Led::Off_Exit() {
@@ -99,7 +100,7 @@ void Led::Off_Exit() {
 }
 
 //============================================================
-// STATE: On
+// STATE: Root/On
 //============================================================
 
 void Led::On_Entry() {
@@ -111,9 +112,9 @@ void Led::On_Entry() {
     timer.start(k_ms_to_ticks_floor64(5*1000), event);
 }
 
-EventFnResult<LedEvent> Led::On_Event(LedEvent event) {
+void Led::On_Event(LedEvent event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
-    return EventFnResult<LedEvent>();
+    return;
 }
 
 void Led::On_Exit() {

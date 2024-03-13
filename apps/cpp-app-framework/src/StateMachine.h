@@ -93,7 +93,7 @@ class State {
 public:
     State(
         std::function<void()> entryFn,
-        std::function<EventFnResult<T>(T)> eventFn,
+        std::function<void(T)> eventFn,
         std::function<void()> exitFn,
         State * parent = nullptr,
         const char * name = nullptr) :
@@ -107,7 +107,7 @@ public:
     }
 
     std::function<void()> entryFn;
-    std::function<EventFnResult<T>(T)> eventFn;
+    std::function<void(T)> eventFn;
     std::function<void()> exitFn;
 
     State * parent;
@@ -228,14 +228,16 @@ public:
         State<T> * stateToProcess = this->currentState;
         while (stateToProcess != nullptr) {
             // Reset variables which might get changed when event functions are called
-            // this->m_nextState = nullptr;
-            // this->m_stopPropagation = false;
-            EventFnResult<T> result = stateToProcess->eventFn(event);
-            if (result.m_nextState != nullptr) {
-                executeTransition(result.m_nextState);
+            m_nextState = nullptr;
+            m_stopPropagation = false;
+            stateToProcess->eventFn(event);
+            if (m_nextState != nullptr) {
+                executeTransition(m_nextState);
                 return;
             }
-            if (result.m_stopPropagation) {
+            if (m_stopPropagation) {
+                // Event function requested to stop propagation,
+                // so bail from loop
                 return;
             }
             stateToProcess = stateToProcess->parent;
@@ -298,7 +300,7 @@ public:
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
     }
 
-    void transitionTo(State<T> * state)  {
+    void queueTransition(State<T> * state)  {
         // Save state to transition to
         this->m_nextState = state;
     }
