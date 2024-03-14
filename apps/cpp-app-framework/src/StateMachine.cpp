@@ -63,7 +63,10 @@ void StateMachine::threadFn()  {
 
     // Perform initial transition from no current state to the initial state as
     // stored in m_nextState.
+    LOG_DBG("Test1");
+    LOG_DBG("this: %p", this);
     __ASSERT(this->m_nextState != nullptr, "No initial state set for state machine.");
+    LOG_DBG("Test3");
     LOG_DBG("Calling entry functions for initial state %s...", this->m_nextState->name);
     executeTransition(this->m_nextState);
 

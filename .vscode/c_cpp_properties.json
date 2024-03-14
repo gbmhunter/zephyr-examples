@@ -3,13 +3,11 @@
         {
             // "name": "Cmake",
             // "configurationProvider": "vector-of-bool.cmake-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
-            "includePath": [
-                "${workspaceFolder}/apps/cpp-app-framework/src/",
-                "${workspaceFolder}/zephyr/include/",
-                "${workspaceFolder}/zephyr/**/",
-                "${workspaceFolder}/zephyr/subsys/testsuite/ztest/include/zephyr"
-            ],
+            "compileCommands": "${workspaceFolder}/build-tests/compile_commands.json"
+            // "includePath": [
+            //     "${workspaceFolder}/apps/cpp-app-framework/src/",
+            //     "${workspaceFolder}/zephyr/include/",
+            // ],
         }
     ],
     "version": 4
