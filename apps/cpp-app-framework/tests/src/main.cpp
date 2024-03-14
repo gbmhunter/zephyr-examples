@@ -29,24 +29,6 @@ enum class TestEventId {
 	TEST,
 };
 
-class TestEvent {
-public:
-    TestEventId id;
-    uint8_t data[10];
-
-    TestEvent() {
-        this->id = TestEventId::TEST;
-        memset(this->data, 0, 10);
-    }
-
-    TestEvent(TestEventId id, const char * data) {
-        this->id = id;
-        if (data != nullptr) {
-            memcpy(this->data, data, 10);
-        }
-    }
-};
-
 /**
  * @brief Test Asserts
  *
@@ -74,6 +56,40 @@ ZTEST(framework_tests, test_assert)
 	// led.sm.join();
 
 
-	auto sm = StateMachine<TestEvent>(10, ledThreadStack, 1024, &ledThreadFnAdapter);
+	auto sm = StateMachine(10, ledThreadStack, 1024, &ledThreadFnAdapter);
+	auto root = State(
+		[]() {
+			printf("Root_Entry\n");
+		},
+		[](Event event) {
+			printf("Root_Event\n");
+		},
+		[]() {
+			printf("Root_Exit\n");
+		},
+		nullptr, "Root"
+	);
+	auto state1 = State(
+		[]() {
+			printf("State1_Entry\n");
+		},
+		[](Event event) {
+			printf("State1_Event\n");
+		},
+		[]() {
+			printf("State1_Exit\n");
+		},
+		&root, "State1"
+	);
+	sm.addState(&root);
+	sm.addState(&state1);
+
+	sm.initialTransition(&state1);
+
+	sm.start();
+	// sm.terminateThreadSm();
+	// sm.join();
+	k_msleep(1000);
 	
+
 }

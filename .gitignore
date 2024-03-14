@@ -1,3 +1,3 @@
 .venv/
-build/
+build*/
 twister-out*/

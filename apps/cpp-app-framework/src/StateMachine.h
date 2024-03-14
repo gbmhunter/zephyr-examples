@@ -71,7 +71,7 @@ public:
         std::function<void(Event)> eventFn,
         std::function<void()> exitFn,
         State * parent = nullptr,
-        const char * name = nullptr) :
+        const char * name = "<unknown>") :
         entryFn(entryFn),
         eventFn(eventFn),
         exitFn(exitFn),
@@ -93,116 +93,34 @@ class StateMachine {
 
 public:
 
-    StateMachine(uint8_t maxNumStates, z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *)) :
-        m_numStates(0),
-        m_maxNumStates(maxNumStates),
-        m_nextState(nullptr),
-        timer(nullptr)
-    {
-        this->states = static_cast<State**>(k_malloc(this->m_maxNumStates * sizeof(State*)));
+    StateMachine(
+        uint8_t maxNumStates,
+        z_thread_stack_element * threadStack,
+        uint32_t threadStackSize_B,
+        void (*threadFnAdapter)(void *, void *, void *));
 
-        // Create message queue for receiving messages
-        const uint8_t sizeOfMsg = 10;
-        const uint8_t numMsgs = 10;
-        this->msgQueueBuffer = static_cast<char*>(k_malloc(numMsgs * sizeOfMsg));
-        k_msgq_init(&msgQueue, msgQueueBuffer, 10, 10);
-
-        this->threadStack = threadStack;
-        k_tid_t my_tid = k_thread_create(&this->thread, this->threadStack,
-                                        threadStackSize_B,
-                                        threadFnAdapter,
-                                        NULL, NULL, NULL,
-                                        5, 0,
-                                        K_FOREVER); // Don't start the thread yet
-
-        printf("StateMachine created\n");
-    }
-
-    void start() {
-        k_thread_start(&this->thread);
-    }
-
-    void join() {
-        k_thread_join(&this->thread, K_FOREVER);
-    }
-
-    void addState(State * state) {
-        __ASSERT(this->m_numStates < this->m_maxNumStates, "Exceeded max number of states of %u when trying to add state \"\".", this->m_maxNumStates, state->name ? state->name : "unknown");
-        this->states[this->m_numStates] = state;
-        this->m_numStates++;
-    }
+    //! Add a state to the state machine
+    //! @param state Pointer to the state to add. 
+    //!         State must remain in scope for the lifetime of the state machine.
+    void addState(State * state);
 
     void addTimer(Timer * timer) {
         this->timer = timer;
     }
 
-    void initialTransition(State * state)  {
-        this->currentState = state;
-    }
+    void initialTransition(State * state);
 
-    void threadFn()  {
-        printf("Thread function for SM started...\n");
+    // Start the state machine thread.
+    void start();
 
-        // Perform initial transition. Call the top-most state entry function
-        // first
-        std::array<State*, MAX_NUM_NESTED_STATES> exitStateStack;
-        State* currentState = this->currentState;
-        int stackIndex = 0;
-        while (currentState != nullptr) {
-            exitStateStack[stackIndex++] = currentState;
-            currentState = currentState->parent;
-            // Make sure we don't exceed the make number of nested states
-            __ASSERT_NO_MSG(stackIndex < MAX_NUM_NESTED_STATES);
-        }
+    // Blocks until the state machine thread has terminated.
+    void join();
 
-        // Call entry functions from top to bottom
-        for (int i = stackIndex - 1; i >= 0; i--) {
-            exitStateStack[i]->entryFn();
-        }
-
-        while (1) {
-
-            k_msleep(1000);
-
-            // Calculate time to wait for next timeout event
-            k_timeout_t timeToWait = K_FOREVER;
-            if (this->timer != nullptr && this->timer->isRunning()) {
-                int64_t timeToWait_ticks = this->timer->timeToNextFire_ticks - k_uptime_ticks();
-                if (timeToWait_ticks < 0) {
-                    timeToWait = K_NO_WAIT;
-                    printf("Timer already expired\n");
-                } else {
-                    timeToWait = K_TICKS(timeToWait_ticks);
-                    printf("Time to wait in ticks: %lld\n", timeToWait_ticks);
-                }
-            } else {
-                printf("No timer set, waiting forever for message.\n");
-            }
-
-
-            // Block on message queue, providing the correct timeout so that if
-            // an event is not received, we handle the next timer timeout at the correct
-            // time.
-            Event event;
-            int queueRc = k_msgq_get(&msgQueue, &event, timeToWait);
-
-            if (queueRc == 0) {
-                printf("Got external event!\n");
-                processEvent(event);
-            } else {
-                printf("Timer must have expired!\n");
-                processEvent(this->timer->event);
-                // Update timer
-                this->timer->incrementNextFireTime();
-            }
-            if (m_terminateThread) {
-                // This will return from the thread function, which terminates it.
-                printf("Returning from thread function...\n");
-                return;
-            }
-            
-        }
-    }
+    //! The function to run in the context of the SM thread.
+    //! The only reason this is public is because it needs to be called from a C 
+    //! "adapter" function.
+    //! This function does not return until the state machine is terminated.
+    void threadFn();
 
     void processEvent(Event event)  {
         // Loop through states from current state to root, calling event functions.
@@ -232,57 +150,7 @@ public:
         }
     }
 
-    void executeTransition(State * nextState) {
-        // We need to find the common parent of the current state and the
-        // next state.
-        State * commonParentState = this->currentState;
-        // State<T> * m_nextState = this->m_nextState;
-        while (commonParentState != nullptr) {
-            State * parentState = nextState;
-            while (parentState != nullptr) {
-                if (commonParentState == parentState) {
-                    break;
-                }
-                parentState = parentState->parent;
-            }
-            if (parentState != nullptr) {
-                break;
-            }
-            commonParentState = commonParentState->parent;
-        }
-
-        // At this point commonParentState should either point to the
-        // common parent, or be nullptr, which means there was no
-        // common parent
-        printk("Common parent state: %p\n", commonParentState);
-
-        // Now call the exit functions from child to common parent
-        State * currentState = this->currentState;
-        while (currentState != commonParentState) {
-            currentState->exitFn();
-            currentState = currentState->parent;
-        }
-
-        // Now call the entry functions from one below common parent (common parent is not exited/entered) to child,
-        // first we need to build up a stack
-        std::array<State*, MAX_NUM_NESTED_STATES> entryStateStack;
-        currentState = nextState;
-        int stackIndex = 0;
-        while (currentState != commonParentState) {
-            entryStateStack[stackIndex++] = currentState;
-            currentState = currentState->parent;
-            // Make sure we don't exceed the make number of nested states
-            __ASSERT_NO_MSG(stackIndex < MAX_NUM_NESTED_STATES);
-        }
-
-        // Now we have stack, we can call entry functions in order
-        for (int i = stackIndex - 1; i >= 0; i--) {
-            entryStateStack[i]->entryFn();
-        }
-
-        // Finally, update the current state
-        this->currentState = nextState;
-    }
+    void executeTransition(State * nextState);
 
     void sendEvent(Event event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
