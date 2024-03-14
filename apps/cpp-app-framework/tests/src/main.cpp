@@ -1,7 +1,6 @@
 #include <zephyr/ztest.h>
 
 // #include "RgbLed.h"
-#include "catch.hpp"
 
 #include "Led.h"
 #include "StateMachine.h"
@@ -76,4 +75,5 @@ ZTEST(framework_tests, test_assert)
 
 
 	auto sm = StateMachine<TestEvent>(10, ledThreadStack, 1024, &ledThreadFnAdapter);
+	
 }
