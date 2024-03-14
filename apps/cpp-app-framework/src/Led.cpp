@@ -40,14 +40,14 @@ void Led::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    sm.sendEvent(LedEvent(LedEventId::ON, nullptr));
+    sm.sendEvent(Event((uint8_t)LedEventId::ON, nullptr));
 }
 
 void Led::terminateThread() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    sm.sendEvent(LedEvent(LedEventId::TERMINATE_THREAD, nullptr));
+    sm.sendEvent(Event((uint8_t)LedEventId::TERMINATE_THREAD, nullptr));
 }
 
 //============================================================
@@ -58,11 +58,11 @@ void Led::Root_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Root_Event(LedEvent event) {
+void Led::Root_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
 
 
-    if (event.id == LedEventId::TERMINATE_THREAD) {
+    if (event.id == (uint8_t)LedEventId::TERMINATE_THREAD) {
         sm.terminateThreadSm();
         return;
     }
@@ -82,10 +82,10 @@ void Led::Off_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Off_Event(LedEvent event) {
+void Led::Off_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
 
-    if (event.id == LedEventId::ON) {
+    if (event.id == (uint8_t)LedEventId::ON) {
         // Transition to On state
         // transitionTo(&on);
         
@@ -110,12 +110,12 @@ void Led::On_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Start timer
-    LedEvent event;
-    event.id = LedEventId::TIMER_EXPIRED;
+    Event event;
+    event.id = (uint8_t)LedEventId::TIMER_EXPIRED;
     timer.start(k_ms_to_ticks_floor64(5*1000), event);
 }
 
-void Led::On_Event(LedEvent event) {
+void Led::On_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
     return;
 }

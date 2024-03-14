@@ -7,14 +7,31 @@
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 
-template<typename T>
+class Event {
+public:
+    uint8_t id;
+    uint8_t data[10];
+
+    Event() {
+        this->id = 0;
+        memset(this->data, 0, 10);
+    }
+
+    Event(uint8_t id, const char * data) {
+        this->id = id;
+        if (data != nullptr) {
+            memcpy(this->data, data, 10);
+        }
+    }
+};
+
 class Timer {
 public:
     int64_t period_ticks;
     int64_t startTime_ticks;
     int64_t timeToNextFire_ticks;
     bool m_isRunning;
-    T event;
+    Event event;
 
     Timer() :
         period_ticks(0),
@@ -25,7 +42,7 @@ public:
         // nothing to do
     }
 
-    void start(int64_t period_ticks, T event) {
+    void start(int64_t period_ticks, Event event) {
         // Start timer
         this->period_ticks = period_ticks;
         this->event = event;
@@ -47,53 +64,11 @@ public:
     }
 };
 
-template<typename T>
-class State;
-
-template<typename T>
-class EventFnResult {
-public:
-    /**
-     * Set to true if you want to stop the event from propagating to the parent state.
-    */
-    bool m_stopPropagation;
-
-    /**
-     * Assign to a state if you want to transition to a new state. If this is non-null, then
-     * stopPropagation is ignored and assumed to be true (events are never propagated up to the
-     * parent if a state transition is requested).
-    */
-    State<T> * m_nextState;
-
-    EventFnResult() :
-        m_stopPropagation(false),
-        m_nextState(nullptr)
-    {
-        // nothing to do
-    }
-
-    EventFnResult(State<T> * m_nextState) :
-        m_stopPropagation(true),
-        m_nextState(m_nextState)
-    {
-        // nothing to do
-    }
-
-    void nextState(State<T> * nextState) {
-        this->m_nextState = nextState;
-    }
-
-    void stopPropagation() {
-        this->m_stopPropagation = true;
-    }
-};
-
-template<typename T>
 class State {
 public:
     State(
         std::function<void()> entryFn,
-        std::function<void(T)> eventFn,
+        std::function<void(Event)> eventFn,
         std::function<void()> exitFn,
         State * parent = nullptr,
         const char * name = nullptr) :
@@ -107,16 +82,13 @@ public:
     }
 
     std::function<void()> entryFn;
-    std::function<void(T)> eventFn;
+    std::function<void(Event)> eventFn;
     std::function<void()> exitFn;
 
     State * parent;
     const char * name;
 };
 
-
-
-template<typename T>
 class StateMachine {
 
 public:
@@ -127,7 +99,7 @@ public:
         m_nextState(nullptr),
         timer(nullptr)
     {
-        this->states = static_cast<State<T>**>(k_malloc(this->m_maxNumStates * sizeof(State<T>*)));
+        this->states = static_cast<State**>(k_malloc(this->m_maxNumStates * sizeof(State*)));
 
         // Create message queue for receiving messages
         const uint8_t sizeOfMsg = 10;
@@ -154,17 +126,17 @@ public:
         k_thread_join(&this->thread, K_FOREVER);
     }
 
-    void addState(State<T> * state) {
+    void addState(State * state) {
         __ASSERT(this->m_numStates < this->m_maxNumStates, "Exceeded max number of states of %u when trying to add state \"\".", this->m_maxNumStates, state->name ? state->name : "unknown");
         this->states[this->m_numStates] = state;
         this->m_numStates++;
     }
 
-    void addTimer(Timer<T> * timer) {
+    void addTimer(Timer * timer) {
         this->timer = timer;
     }
 
-    void initialTransition(State<T> * state)  {
+    void initialTransition(State * state)  {
         this->currentState = state;
     }
 
@@ -173,8 +145,8 @@ public:
 
         // Perform initial transition. Call the top-most state entry function
         // first
-        std::array<State<T>*, MAX_NUM_NESTED_STATES> exitStateStack;
-        State<T>* currentState = this->currentState;
+        std::array<State*, MAX_NUM_NESTED_STATES> exitStateStack;
+        State* currentState = this->currentState;
         int stackIndex = 0;
         while (currentState != nullptr) {
             exitStateStack[stackIndex++] = currentState;
@@ -211,7 +183,7 @@ public:
             // Block on message queue, providing the correct timeout so that if
             // an event is not received, we handle the next timer timeout at the correct
             // time.
-            T event;
+            Event event;
             int queueRc = k_msgq_get(&msgQueue, &event, timeToWait);
 
             if (queueRc == 0) {
@@ -232,11 +204,11 @@ public:
         }
     }
 
-    void processEvent(T event)  {
+    void processEvent(Event event)  {
         // Loop through states from current state to root, calling event functions.
         // If at any point an event function requests a transition or to stop propagation,
         // we should break out of the loop.
-        State<T> * stateToProcess = this->currentState;
+        State * stateToProcess = this->currentState;
         while (stateToProcess != nullptr) {
             // Reset variables which might get changed when event functions are called
             m_terminateThread = false;
@@ -260,13 +232,13 @@ public:
         }
     }
 
-    void executeTransition(State<T> * nextState) {
+    void executeTransition(State * nextState) {
         // We need to find the common parent of the current state and the
         // next state.
-        State<T> * commonParentState = this->currentState;
+        State * commonParentState = this->currentState;
         // State<T> * m_nextState = this->m_nextState;
         while (commonParentState != nullptr) {
-            State<T> * parentState = nextState;
+            State * parentState = nextState;
             while (parentState != nullptr) {
                 if (commonParentState == parentState) {
                     break;
@@ -285,7 +257,7 @@ public:
         printk("Common parent state: %p\n", commonParentState);
 
         // Now call the exit functions from child to common parent
-        State<T> * currentState = this->currentState;
+        State * currentState = this->currentState;
         while (currentState != commonParentState) {
             currentState->exitFn();
             currentState = currentState->parent;
@@ -293,7 +265,7 @@ public:
 
         // Now call the entry functions from one below common parent (common parent is not exited/entered) to child,
         // first we need to build up a stack
-        std::array<State<T>*, MAX_NUM_NESTED_STATES> entryStateStack;
+        std::array<State*, MAX_NUM_NESTED_STATES> entryStateStack;
         currentState = nextState;
         int stackIndex = 0;
         while (currentState != commonParentState) {
@@ -312,11 +284,11 @@ public:
         this->currentState = nextState;
     }
 
-    void sendEvent(T event)  {
+    void sendEvent(Event event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
     }
 
-    void queueTransition(State<T> * state)  {
+    void queueTransition(State * state)  {
         // Save state to transition to
         this->m_nextState = state;
     }
@@ -333,11 +305,11 @@ public:
 private:
     uint8_t m_numStates;
     uint8_t m_maxNumStates;
-    State<T> ** states;
-    State<T> * currentState;
+    State ** states;
+    State * currentState;
 
     // Variables that can be set in state functions
-    State<T> * m_nextState;
+    State * m_nextState;
     bool m_stopPropagation;
     bool m_terminateThread;
 
@@ -347,6 +319,6 @@ private:
     z_thread_stack_element * threadStack;
     struct k_thread thread;
 
-    Timer<T> * timer;
+    Timer * timer;
 
 };

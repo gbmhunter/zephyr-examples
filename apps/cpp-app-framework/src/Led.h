@@ -39,25 +39,25 @@ class Led {
         void turnOn();
 
         void terminateThread();
-        StateMachine<LedEvent> sm;
+        StateMachine sm;
 
     private:
 
 
-        State<LedEvent> root;
+        State root;
         void Root_Entry();
-        void Root_Event(LedEvent event);
+        void Root_Event(Event event);
         void Root_Exit();
 
-        State<LedEvent> off;
+        State off;
         void Off_Entry();
-        void Off_Event(LedEvent event);
+        void Off_Event(Event event);
         void Off_Exit();
 
-        State<LedEvent> on;
+        State on;
         void On_Entry();
-        void On_Event(LedEvent event);
+        void On_Event(Event event);
         void On_Exit();
 
-        Timer<LedEvent> timer;
+        Timer timer;
 };
