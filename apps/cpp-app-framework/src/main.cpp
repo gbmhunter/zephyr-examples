@@ -31,7 +31,7 @@ int main(void) {
     k_msleep(1000);
 
     printf("Terminating thread\n");
-    led.terminateThread();
+    led.sm.terminateThread();
     printf("Joining thread\n");
     led.sm.join();
     printf("main() returning...\n");

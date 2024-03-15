@@ -43,13 +43,6 @@ void Led::turnOn() {
     sm.sendEvent(Event((uint8_t)LedEventId::ON, nullptr));
 }
 
-void Led::terminateThread() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
-
-    // Send event to state machine
-    sm.sendEvent(Event((uint8_t)LedEventId::TERMINATE_THREAD, nullptr));
-}
-
 //============================================================
 // STATE: Root
 //============================================================
@@ -62,10 +55,10 @@ void Led::Root_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
 
 
-    if (event.id == (uint8_t)LedEventId::TERMINATE_THREAD) {
-        sm.terminateThreadSm();
-        return;
-    }
+    // if (event.id == (uint8_t)LedEventId::TERMINATE_THREAD) {
+    //     sm.terminateThreadSm();
+    //     return;
+    // }
 
     return;
 }

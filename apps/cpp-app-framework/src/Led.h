@@ -8,10 +8,10 @@
 #include "StateMachine.h"
 
 enum class LedEventId {
-    TERMINATE_THREAD,
-    ON,
+    ON = (uint8_t)EventId::MAX_VALUE,
     OFF,
     TIMER_EXPIRED,
+    MAX_VALUE,
 };
 
 class LedEvent {
@@ -38,7 +38,6 @@ class Led {
 
         void turnOn();
 
-        void terminateThread();
         StateMachine sm;
 
     private:

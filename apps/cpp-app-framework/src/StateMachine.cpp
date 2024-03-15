@@ -26,6 +26,10 @@ StateMachine::StateMachine(uint8_t maxNumStates, z_thread_stack_element * thread
     this->msgQueueBuffer = static_cast<char*>(k_malloc(numMsgs * sizeOfMsg));
     k_msgq_init(&msgQueue, msgQueueBuffer, 10, 10);
 
+    // Initialize SM mutex
+    int rc = k_mutex_init(&mutex);
+    __ASSERT_NO_MSG(rc == 0);
+
     this->threadStack = threadStack;
     k_tid_t my_tid = k_thread_create(&this->thread, this->threadStack,
                                     threadStackSize_B,
@@ -46,6 +50,10 @@ void StateMachine::start() {
     k_thread_start(&this->thread);
 }
 
+void StateMachine::terminateThread() {
+    sendEvent(Event((uint8_t)EventId::TERMINATE_THREAD, nullptr));
+}
+
 void StateMachine::join() {
     LOG_DBG("Blocking until state machine thread terminates...");
     k_thread_join(&this->thread, K_FOREVER);
@@ -60,6 +68,9 @@ void StateMachine::addState(State * state) {
 
 void StateMachine::threadFn()  {
     LOG_DBG("Thread function for SM started...");
+
+    // Lock mutex, this will be unlocked just before we block on the message queue
+    k_mutex_lock(&mutex, K_FOREVER);
 
     // Perform initial transition from no current state to the initial state as
     // stored in m_nextState.
@@ -89,6 +100,8 @@ void StateMachine::threadFn()  {
             LOG_DBG("No timer set, waiting forever for message.");
         }
 
+        // Just about to block on message queue, so unlock SM mutex
+        k_mutex_unlock(&mutex);
 
         // Block on message queue, providing the correct timeout so that if
         // an event is not received, we handle the next timer timeout at the correct
@@ -96,8 +109,15 @@ void StateMachine::threadFn()  {
         Event event;
         int queueRc = k_msgq_get(&msgQueue, &event, timeToWait);
 
+        // Lock SM mutex until we get to the top of the loop again
+        k_mutex_lock(&mutex, K_FOREVER);
+
         if (queueRc == 0) {
-            LOG_DBG("SM thread received external event.");
+            LOG_DBG("SM thread received event.");
+            if (event.id == (uint8_t)EventId::TERMINATE_THREAD) {
+                LOG_DBG("Terminate thread event received. Returning from the thread function...");
+                return;
+            }
             processEvent(event);
         } else {
             LOG_DBG("SM timer expired.");
@@ -117,6 +137,34 @@ void StateMachine::threadFn()  {
 //===========================================================================//
 // PRIVATE METHOD DEFINITIONS
 //===========================================================================//
+
+void StateMachine::processEvent(Event event)  {
+    // Loop through states from current state to root, calling event functions.
+    // If at any point an event function requests a transition or to stop propagation,
+    // we should break out of the loop.
+    State * stateToProcess = this->currentState;
+    while (stateToProcess != nullptr) {
+        // Reset variables which might get changed when event functions are called
+        m_terminateThread = false;
+        m_nextState = nullptr;
+        m_stopPropagation = false;
+        stateToProcess->eventFn(event);
+        if (m_terminateThread) {
+            LOG_DBG("Terminate thread requested.");
+            return;
+        }
+        if (m_nextState != nullptr) {
+            executeTransition(m_nextState);
+            return;
+        }
+        if (m_stopPropagation) {
+            // Event function requested to stop propagation,
+            // so bail from loop
+            return;
+        }
+        stateToProcess = stateToProcess->parent;
+    }
+}
 
 void StateMachine::executeTransition(State * nextState) {
     // We need to find the common parent of the current state and the

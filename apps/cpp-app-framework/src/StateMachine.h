@@ -7,6 +7,11 @@
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 
+enum class EventId {
+    TERMINATE_THREAD,
+    MAX_VALUE,
+};
+
 class Event {
 public:
     uint8_t id;
@@ -93,6 +98,8 @@ class StateMachine {
 
 public:
 
+    struct k_mutex mutex;
+
     StateMachine(
         uint8_t maxNumStates,
         z_thread_stack_element * threadStack,
@@ -113,6 +120,8 @@ public:
     // Start the state machine thread.
     void start();
 
+    void terminateThread();
+
     // Blocks until the state machine thread has terminated.
     void join();
 
@@ -122,35 +131,7 @@ public:
     //! This function does not return until the state machine is terminated.
     void threadFn();
 
-    void processEvent(Event event)  {
-        // Loop through states from current state to root, calling event functions.
-        // If at any point an event function requests a transition or to stop propagation,
-        // we should break out of the loop.
-        State * stateToProcess = this->currentState;
-        while (stateToProcess != nullptr) {
-            // Reset variables which might get changed when event functions are called
-            m_terminateThread = false;
-            m_nextState = nullptr;
-            m_stopPropagation = false;
-            stateToProcess->eventFn(event);
-            if (m_terminateThread) {
-                printf("Terminate thread requested.\n");
-                return;
-            }
-            if (m_nextState != nullptr) {
-                executeTransition(m_nextState);
-                return;
-            }
-            if (m_stopPropagation) {
-                // Event function requested to stop propagation,
-                // so bail from loop
-                return;
-            }
-            stateToProcess = stateToProcess->parent;
-        }
-    }
 
-    void executeTransition(State * nextState);
 
     void sendEvent(Event event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
@@ -188,5 +169,11 @@ private:
     struct k_thread thread;
 
     Timer * timer;
+
+
+    //! Processes an event that has been received on the message queue.
+    void processEvent(Event event);
+
+    void executeTransition(State * nextState);
 
 };
