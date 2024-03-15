@@ -46,6 +46,17 @@ void checkCallstack(
     }
 }
 
+void checkCurrentState(StateMachine * sm, const char * expectedStateName)
+{
+    State * currentState = sm->currentState();
+    zassert_equal(
+        strcmp(currentState->name, expectedStateName),
+        0,
+        "Current state name \"%s\" did not match the expected state name of \"%s\".",
+        currentState->name,
+        expectedStateName);
+}
+
 /**
  * @brief Test Asserts
  *
@@ -64,6 +75,9 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Give the state machine time to run
     k_msleep(1000);
 
+    // Make sure we are in state 1
+    checkCurrentState(&testSm, "State1");
+
     // Create array of expected call stack
     std::array<const char *, CALL_STACK_DEPTH> expectedCallStack = {
         "Root/Entry",
@@ -80,6 +94,9 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Give the state machine time to run
     k_msleep(1000);
 
+    // Make sure we are now in state 2
+    checkCurrentState(&testSm, "State2");
+
     // Create array of expected call stack
     expectedCallStack = {
         "State1/Event",
@@ -90,6 +107,8 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Check the call stack
     callstack = testSm.getCallstackAndClear();
     checkCallstack(callstack, expectedCallStack);
+
+
 
     testSm.terminateThread();
     testSm.join();

@@ -125,13 +125,16 @@ public:
     // Blocks until the state machine thread has terminated.
     void join();
 
-    //! The function to run in the context of the SM thread.
+    //! @brief The function to run in the context of the SM thread.
     //! The only reason this is public is because it needs to be called from a C 
     //! "adapter" function.
     //! This function does not return until the state machine is terminated.
     void threadFn();
 
-
+    //! @brief Get the current state of the state machine. Will block while the state machine is busy.
+    //! THREAD-SAFE
+    //! @return Pointer to the current state.
+    State * currentState();
 
     void sendEvent(Event event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
@@ -155,7 +158,7 @@ private:
     uint8_t m_numStates;
     uint8_t m_maxNumStates;
     State ** states;
-    State * currentState;
+    State * m_currentState;
 
     // Variables that can be set in state functions
     State * m_nextState;

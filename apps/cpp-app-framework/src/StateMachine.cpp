@@ -13,7 +13,7 @@ StateMachine::StateMachine(uint8_t maxNumStates, z_thread_stack_element * thread
         m_numStates(0),
         m_maxNumStates(maxNumStates),
         states(nullptr),
-        currentState(nullptr), // Start off with no current state
+        m_currentState(nullptr), // Start off with no current state
         m_nextState(nullptr),
         timer(nullptr)
 {
@@ -134,6 +134,17 @@ void StateMachine::threadFn()  {
     }
 }
 
+State * StateMachine::currentState()
+{
+    // Lock mutex
+    k_mutex_lock(&mutex, K_FOREVER);
+    // Get current state
+    State * currentState = this->m_currentState;
+    // Unlock mutex
+    k_mutex_unlock(&mutex);
+    return currentState;
+}
+
 //===========================================================================//
 // PRIVATE METHOD DEFINITIONS
 //===========================================================================//
@@ -142,7 +153,7 @@ void StateMachine::processEvent(Event event)  {
     // Loop through states from current state to root, calling event functions.
     // If at any point an event function requests a transition or to stop propagation,
     // we should break out of the loop.
-    State * stateToProcess = this->currentState;
+    State * stateToProcess = this->m_currentState;
     while (stateToProcess != nullptr) {
         // Reset variables which might get changed when event functions are called
         m_terminateThread = false;
@@ -169,7 +180,7 @@ void StateMachine::processEvent(Event event)  {
 void StateMachine::executeTransition(State * nextState) {
     // We need to find the common parent of the current state and the
     // next state.
-    State * commonParentState = this->currentState;
+    State * commonParentState = this->m_currentState;
     // State<T> * m_nextState = this->m_nextState;
     while (commonParentState != nullptr) {
         State * parentState = nextState;
@@ -191,7 +202,7 @@ void StateMachine::executeTransition(State * nextState) {
     LOG_DBG("Found common parent state: %s.", commonParentState ? commonParentState->name : "nullptr");
 
     // Now call the exit functions from child to common parent
-    State * currentState = this->currentState;
+    State * currentState = this->m_currentState;
     while (currentState != commonParentState) {
         currentState->exitFn();
         currentState = currentState->parent;
@@ -215,5 +226,5 @@ void StateMachine::executeTransition(State * nextState) {
     }
 
     // Finally, update the current state
-    this->currentState = nextState;
+    this->m_currentState = nextState;
 }
