@@ -45,6 +45,11 @@ void TestSm::fireTestEvent1() {
     sm.sendEvent(Event((uint8_t)TestSmEventId::TEST_EVENT_1, nullptr));
 }
 
+void TestSm::fireRootEvent()
+{
+    sm.sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
+}
+
 void TestSm::addToCallstack(const char * functionName) {
     callstack[callstackIdx++] = functionName;
 }
@@ -73,10 +78,12 @@ void TestSm::Root_Entry() {
 
 void TestSm::Root_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+    addToCallstack("Root/Event");
 }
 
 void TestSm::Root_Exit() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
+    addToCallstack("Root/Exit");
 }
 
 //============================================================

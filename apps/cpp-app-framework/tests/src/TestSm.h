@@ -11,6 +11,7 @@ const uint8_t CALL_STACK_DEPTH = 10;
 
 enum class TestSmEventId {
     TEST_EVENT_1 = (uint8_t)EventId::MAX_VALUE,
+    ROOT_EVENT,
 };
 
 class TestSm {
@@ -26,9 +27,12 @@ class TestSm {
         std::array<const char *, CALL_STACK_DEPTH> callstack = { nullptr };
 
         void addToCallstack(const char * functionName);
+
         std::array<const char *, CALL_STACK_DEPTH> getCallstackAndClear();
 
         void fireTestEvent1();
+
+        void fireRootEvent();
 
     private:
 
