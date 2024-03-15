@@ -2,18 +2,18 @@
 #include <functional>
 
 #include <zephyr/kernel.h>
-
+#include <zephyr/logging/log.h>
 
 #include "Led.h"
 #include "StateMachine.h"
 
+LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
 K_THREAD_STACK_DEFINE(ledThreadStack, 1024);
 
 Led * l_led = nullptr;
 
 void ledThreadFnAdapter(void *, void *, void *) {
-    printf("ledThreadFnAdapter\n");
     l_led->threadFn();
 }
 
@@ -31,13 +31,12 @@ int main(void) {
     k_msleep(1000);
 
     // Make the LED flash
+    led.blink(5, 1000, 1000);
     
-
-    printf("Terminating thread\n");
+    LOG_DBG("Terminating thread\n");
     led.terminateThread();
-    printf("Joining thread\n");
+    LOG_DBG("Joining thread\n");
     led.join();
-    printf("main() returning...\n");
-
+    LOG_DBG("main() returning...\n");
 }
 

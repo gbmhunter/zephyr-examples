@@ -40,7 +40,25 @@ void Led::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    sendEvent(Event((uint8_t)LedEventId::ON, nullptr));
+    auto event = Event((uint8_t)LedEventId::ON, nullptr);
+    sendEvent(event);
+}
+
+void Led::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
+{
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+
+    char data[10];
+    BlinkEvent * event = reinterpret_cast<BlinkEvent*>(data);
+    event->id = (uint8_t)LedEventId::BLINK;
+    event->numTimes = numTimes;
+    event->onTime_ms = onTime_ms;
+    event->offTime_ms = offTime_ms;
+
+    // Send event to state machine
+    // k_msgq_put(&msgQueue, &data, K_NO_WAIT);
+    // auto event1 = Event(event);
+    sendEvent2(data);
 }
 
 //============================================================
@@ -51,8 +69,17 @@ void Led::Root_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Root_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void Led::Root_Event(Event* event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+
+    if (event->id == (uint8_t)LedEventId::BLINK) {
+        // Got blink event. Reinterp cast to BlinkEvent
+        auto blinkEvent = reinterpret_cast<BlinkEvent*>(event);
+
+        LOG_DBG("Got blink event. numTimes: %u, onTime_ms: %u, offTime_ms: %u", blinkEvent->numTimes, blinkEvent->onTime_ms, blinkEvent->offTime_ms);
+        
+        return;
+    }
 
     return;
 }
@@ -69,10 +96,10 @@ void Led::Off_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Off_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void Led::Off_Event(Event* event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
 
-    if (event.id == (uint8_t)LedEventId::ON) {
+    if (event->id == (uint8_t)LedEventId::ON) {
         // Transition to On state
         queueTransition(&on);
         return;
@@ -97,8 +124,8 @@ void Led::On_Entry() {
     timer.start(k_ms_to_ticks_floor64(5*1000), event);
 }
 
-void Led::On_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void Led::On_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     return;
 }
 

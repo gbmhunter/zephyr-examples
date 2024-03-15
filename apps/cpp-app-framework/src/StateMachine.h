@@ -15,18 +15,18 @@ enum class EventId {
 class Event {
 public:
     uint8_t id;
-    uint8_t data[10];
+    // uint8_t data[10];
 
     Event() {
         this->id = 0;
-        memset(this->data, 0, 10);
+        // memset(this->data, 0, 10);
     }
 
     Event(uint8_t id, const char * data) {
         this->id = id;
-        if (data != nullptr) {
-            memcpy(this->data, data, 10);
-        }
+        // if (data != nullptr) {
+        //     memcpy(this->data, data, 10);
+        // }
     }
 };
 
@@ -73,7 +73,7 @@ class State {
 public:
     State(
         std::function<void()> entryFn,
-        std::function<void(Event)> eventFn,
+        std::function<void(Event*)> eventFn,
         std::function<void()> exitFn,
         State * parent = nullptr,
         const char * name = "<unknown>") :
@@ -87,7 +87,7 @@ public:
     }
 
     std::function<void()> entryFn;
-    std::function<void(Event)> eventFn;
+    std::function<void(Event*)> eventFn;
     std::function<void()> exitFn;
 
     State * parent;
@@ -140,8 +140,12 @@ public:
     //! @return Pointer to the current state.
     State * currentState();
 
-    void sendEvent(Event event)  {
+    void sendEvent(Event &event)  {
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
+    }
+
+    void sendEvent2(char * data)  {
+        k_msgq_put(&msgQueue, data, K_NO_WAIT);
     }
 
     void queueTransition(State * state)  {
@@ -179,7 +183,7 @@ private:
 
 
     //! Processes an event that has been received on the message queue.
-    void processEvent(Event event);
+    void processEvent(Event* event);
 
     void executeTransition(State * nextState);
 
