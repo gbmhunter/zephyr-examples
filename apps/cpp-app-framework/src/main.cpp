@@ -14,14 +14,14 @@ Led * l_led = nullptr;
 
 void ledThreadFnAdapter(void *, void *, void *) {
     printf("ledThreadFnAdapter\n");
-    l_led->sm.threadFn();
+    l_led->threadFn();
 }
 
 int main(void) {
 
     auto led = Led(ledThreadStack, &ledThreadFnAdapter);
     l_led = &led;
-    led.sm.start();
+    led.start();
     // auto sm = StateMachine(10);
 
     // printf("Hello, world!\n");
@@ -30,16 +30,14 @@ int main(void) {
 
     k_msleep(1000);
 
+    // Make the LED flash
+    
+
     printf("Terminating thread\n");
-    led.sm.terminateThread();
+    led.terminateThread();
     printf("Joining thread\n");
-    led.sm.join();
+    led.join();
     printf("main() returning...\n");
 
 }
-
-void test() {
-
-}
-
 

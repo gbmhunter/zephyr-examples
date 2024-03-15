@@ -9,7 +9,7 @@ LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 const uint8_t MAX_NUM_STATES = 10;
 
 Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *)) :
-        sm(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
+        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
         root(
             std::bind(&Led::Root_Entry, this),
             std::bind(&Led::Root_Event, this, std::placeholders::_1),
@@ -29,18 +29,18 @@ Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, 
     LOG_INF("Led created\n");
 
 
-    sm.addState(&off);
-    sm.addTimer(&timer);
+    addState(&off);
+    addTimer(&timer);
 
     // Setup initial transition
-    sm.initialTransition(&off);
+    initialTransition(&off);
 }
 
 void Led::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    sm.sendEvent(Event((uint8_t)LedEventId::ON, nullptr));
+    sendEvent(Event((uint8_t)LedEventId::ON, nullptr));
 }
 
 //============================================================
@@ -53,12 +53,6 @@ void Led::Root_Entry() {
 
 void Led::Root_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
-
-
-    // if (event.id == (uint8_t)LedEventId::TERMINATE_THREAD) {
-    //     sm.terminateThreadSm();
-    //     return;
-    // }
 
     return;
 }
@@ -80,12 +74,7 @@ void Led::Off_Event(Event event) {
 
     if (event.id == (uint8_t)LedEventId::ON) {
         // Transition to On state
-        // transitionTo(&on);
-        
-        // result.nextState = &on;
-        // EventFnResult<LedEvent> result;
-        // result.nextState(&on);
-        sm.queueTransition(&on);
+        queueTransition(&on);
         return;
     }
     return;

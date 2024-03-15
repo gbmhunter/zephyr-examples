@@ -32,13 +32,11 @@ public:
     }
 };
 
-class Led {
+class Led: public StateMachine {
     public:
         Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *));
 
         void turnOn();
-
-        StateMachine sm;
 
     private:
 
