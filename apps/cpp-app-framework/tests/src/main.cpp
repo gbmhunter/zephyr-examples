@@ -22,31 +22,32 @@ enum class TestEventId
 };
 
 void checkCallstack(
-    std::array<const char *, CALL_STACK_DEPTH> &actualCallStack,
+    TestSm * sm,
     std::array<const char *, CALL_STACK_DEPTH> &expectedCallStack)
 {
-    printk("Checking callstack...\n");
+    auto actualCallstack = sm->getCallstackAndClear();
+
     for (uint8_t i = 0; i < CALL_STACK_DEPTH; i++)
     {
         if (expectedCallStack[i] == nullptr)
         {
             // Reached end of call stack. Check the same index in
             // the actual callstack is nullptr also, then return
-            zassert_is_null(actualCallStack[i], "Actual callstack has more entries than the expected callstack.");
+            zassert_is_null(actualCallstack[i], "Actual callstack has more entries than the expected callstack.");
             break;
         }
         printk("Expected callstack entry: %s\n", expectedCallStack[i]);
         zassert_not_null(
-            actualCallStack[i],
+            actualCallstack[i],
             "Actual callstack is missing a call with the name %s.",
             expectedCallStack[i]);
 
         // If we get here both callstacks are non-null, safe to compare the strings
-        zassert_equal(strcmp(actualCallStack[i], expectedCallStack[i]), 0, "Expected call of %s was not equal to the actual call of %s at index %u.", expectedCallStack[i], actualCallStack[i], i);
+        zassert_equal(strcmp(actualCallstack[i], expectedCallStack[i]), 0, "Expected call of %s was not equal to the actual call of %s at index %u.", expectedCallStack[i], actualCallstack[i], i);
     }
 }
 
-void checkCurrentState(StateMachine * sm, const char * expectedStateName)
+void checkCurrentState(TestSm * sm, const char * expectedStateName)
 {
     State * currentState = sm->currentState();
     zassert_equal(
@@ -78,15 +79,12 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Make sure we are in state 1
     checkCurrentState(&testSm, "State1");
 
-    // Create array of expected call stack
+    // Check the call stack
     std::array<const char *, CALL_STACK_DEPTH> expectedCallStack = {
         "Root/Entry",
         "State1/Entry",
      };
-
-    // Check the call stack
-    auto callstack = testSm.getCallstackAndClear();
-    checkCallstack(callstack, expectedCallStack);
+    checkCallstack(&testSm, expectedCallStack);
 
     // Fire event which will cause transition from state 1 to state 2
     testSm.fireTestEvent1();
@@ -97,18 +95,30 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Make sure we are now in state 2
     checkCurrentState(&testSm, "State2");
 
-    // Create array of expected call stack
+    // Check the call stack
     expectedCallStack = {
         "State1/Event",
         "State1/Exit",
         "State2/Entry",
      };
+    checkCallstack(&testSm, expectedCallStack);
+
+    // Fire event which is not handled by any states, we should see
+    // the state 2 and root state event handlers called
+    testSm.fireRootEvent();
+
+    // Give the state machine time to run
+    k_msleep(1000);
+
+    // Make sure we are still in state 2
+    checkCurrentState(&testSm, "State2");
 
     // Check the call stack
-    callstack = testSm.getCallstackAndClear();
-    checkCallstack(callstack, expectedCallStack);
-
-
+    expectedCallStack = {
+        "State2/Event",
+        "Root/Event",
+     };
+    checkCallstack(&testSm, expectedCallStack);
 
     testSm.terminateThread();
     testSm.join();
