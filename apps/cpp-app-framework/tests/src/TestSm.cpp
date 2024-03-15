@@ -11,7 +11,7 @@ const uint8_t MAX_NUM_STATES = 10;
 TestSm::TestSm(
     z_thread_stack_element * threadStack,
     void (*threadFnAdapter)(void *, void *, void *)) :
-        sm(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
+        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
         root(
             std::bind(&TestSm::Root_Entry, this),
             std::bind(&TestSm::Root_Event, this, std::placeholders::_1),
@@ -31,23 +31,23 @@ TestSm::TestSm(
     LOG_INF("Test SM created.");
 
 
-    sm.addState(&root);
-    sm.addState(&state1);
-    sm.addState(&state2);
-    sm.addTimer(&timer);
+    addState(&root);
+    addState(&state1);
+    addState(&state2);
+    addTimer(&timer);
 
     // Setup initial transition
-    sm.initialTransition(&state1);
+    initialTransition(&state1);
 }
 
 void TestSm::fireTestEvent1() {
     // Send event to state machine
-    sm.sendEvent(Event((uint8_t)TestSmEventId::TEST_EVENT_1, nullptr));
+    sendEvent(Event((uint8_t)TestSmEventId::TEST_EVENT_1, nullptr));
 }
 
 void TestSm::fireRootEvent()
 {
-    sm.sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
+    sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
 }
 
 void TestSm::addToCallstack(const char * functionName) {
@@ -56,14 +56,14 @@ void TestSm::addToCallstack(const char * functionName) {
 
 std::array<const char *, CALL_STACK_DEPTH> TestSm::getCallstackAndClear() {
     // Lock mutex
-    k_mutex_lock(&sm.mutex, K_FOREVER);
+    k_mutex_lock(&mutex, K_FOREVER);
     // Copy callstack
     std::array<const char *, CALL_STACK_DEPTH> callstackCopy = callstack;
     // Clear callstack and index
     callstack.fill(nullptr);
     callstackIdx = 0;
     // Unlock mutex
-    k_mutex_unlock(&sm.mutex);
+    k_mutex_unlock(&mutex);
     return callstackCopy;
 }
 
@@ -99,7 +99,7 @@ void TestSm::State1_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
     addToCallstack("State1/Event");
     if (event.id == (uint8_t)TestSmEventId::TEST_EVENT_1) {
-        sm.queueTransition(&state2);
+        queueTransition(&state2);
     }
 }
 

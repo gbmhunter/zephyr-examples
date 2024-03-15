@@ -13,7 +13,7 @@ TestSm * l_testSm = nullptr;
 
 void smThreadFnAdapter(void *, void *, void *)
 {
-    l_testSm->sm.threadFn();
+    l_testSm->threadFn();
 }
 
 enum class TestEventId
@@ -59,7 +59,7 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     auto testSm = TestSm(smThreadStack, smThreadFnAdapter);
     l_testSm = &testSm;
 
-    testSm.sm.start();
+    testSm.start();
 
     // Give the state machine time to run
     k_msleep(1000);
@@ -91,6 +91,6 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     callstack = testSm.getCallstackAndClear();
     checkCallstack(callstack, expectedCallStack);
 
-    testSm.sm.terminateThread();
-    testSm.sm.join();
+    testSm.terminateThread();
+    testSm.join();
 }

@@ -14,15 +14,13 @@ enum class TestSmEventId {
     ROOT_EVENT,
 };
 
-class TestSm {
+class TestSm : public StateMachine {
     public:
         TestSm(
             z_thread_stack_element * threadStack, 
             void (*threadFnAdapter)(void *, void *, void *));
 
         void turnOn();
-
-        StateMachine sm;
 
         std::array<const char *, CALL_STACK_DEPTH> callstack = { nullptr };
 
