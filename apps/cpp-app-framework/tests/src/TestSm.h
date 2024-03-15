@@ -12,6 +12,8 @@ const uint8_t CALL_STACK_DEPTH = 10;
 enum class TestSmEventId {
     TEST_EVENT_1 = (uint8_t)EventId::MAX_VALUE,
     ROOT_EVENT,
+    GOTO_STATE_2A,
+    GOTO_STATE_ROOT2,
 };
 
 class TestSm : public StateMachine {
@@ -32,6 +34,10 @@ class TestSm : public StateMachine {
 
         void fireRootEvent();
 
+        void gotoState2A();
+
+        void gotoStateRoot2();
+
     private:
 
         uint8_t callstackIdx = 0;
@@ -50,6 +56,16 @@ class TestSm : public StateMachine {
         void State2_Entry();
         void State2_Event(Event event);
         void State2_Exit();
+
+        State state2A;
+        void State2A_Entry();
+        void State2A_Event(Event event);
+        void State2A_Exit();
+
+        State root2;
+        void Root2_Entry();
+        void Root2_Event(Event event);
+        void Root2_Exit();
 
         Timer timer;
 };

@@ -58,13 +58,7 @@ void checkCurrentState(TestSm * sm, const char * expectedStateName)
         expectedStateName);
 }
 
-/**
- * @brief Test Asserts
- *
- * This test verifies various assert macros provided by ztest.
- *
- */
-ZTEST(framework_tests, make_sure_initial_transition_works)
+ZTEST(framework_tests, make_sure_transitions_works)
 {
     
     // Create test SM
@@ -81,8 +75,8 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
 
     // Check the call stack
     std::array<const char *, CALL_STACK_DEPTH> expectedCallStack = {
-        "Root/Entry",
-        "State1/Entry",
+        "Root_Entry",
+        "State1_Entry",
      };
     checkCallstack(&testSm, expectedCallStack);
 
@@ -97,9 +91,9 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
 
     // Check the call stack
     expectedCallStack = {
-        "State1/Event",
-        "State1/Exit",
-        "State2/Entry",
+        "State1_Event",
+        "State1_Exit",
+        "State2_Entry",
      };
     checkCallstack(&testSm, expectedCallStack);
 
@@ -113,10 +107,65 @@ ZTEST(framework_tests, make_sure_initial_transition_works)
     // Make sure we are still in state 2
     checkCurrentState(&testSm, "State2");
 
+    // Make sure the state 2 and root state event handlers were called
+    expectedCallStack = {
+        "State2_Event",
+        "Root_Event",
+     };
+    checkCallstack(&testSm, expectedCallStack);
+
+    // Goto state 2A
+    testSm.gotoState2A();
+
+    // Give the state machine time to run
+    k_msleep(1000);
+
+    // Make sure we are now in state 2A
+    checkCurrentState(&testSm, "State2A");
+
     // Check the call stack
     expectedCallStack = {
-        "State2/Event",
-        "Root/Event",
+        "State2_Event",
+        "Root_Event",
+        "State2A_Entry",
+     };
+    checkCallstack(&testSm, expectedCallStack);
+
+    // Tell SM to goto state 2A again. Since we are already there, no transitions should occur
+    testSm.gotoState2A();
+
+    // Give the state machine time to run
+    k_msleep(1000);
+
+    // Make sure we are still in state 2A
+    checkCurrentState(&testSm, "State2A");
+
+    // Check the call stack
+    expectedCallStack = {
+        "State2A_Event",
+        "State2_Event",
+        "Root_Event",
+     };
+    checkCallstack(&testSm, expectedCallStack);
+
+    // Go to state root2, which is not connected to any other states
+    testSm.gotoStateRoot2();
+
+    // Give the state machine time to run
+    k_msleep(1000);
+
+    // Make sure we are now in state root2
+    checkCurrentState(&testSm, "Root2");
+
+    // Check the call stack
+    expectedCallStack = {
+        "State2A_Event",
+        "State2_Event",
+        "Root_Event",
+        "State2A_Exit",
+        "State2_Exit",
+        "Root_Exit", // We leave the root state
+        "Root2_Entry",
      };
     checkCallstack(&testSm, expectedCallStack);
 

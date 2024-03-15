@@ -26,7 +26,17 @@ TestSm::TestSm(
             std::bind(&TestSm::State2_Entry, this),
             std::bind(&TestSm::State2_Event, this, std::placeholders::_1),
             std::bind(&TestSm::State2_Exit, this),
-            &root, "State2")
+            &root, "State2"),
+        state2A(
+            std::bind(&TestSm::State2A_Entry, this),
+            std::bind(&TestSm::State2A_Event, this, std::placeholders::_1),
+            std::bind(&TestSm::State2A_Exit, this),
+            &state2, "State2A"),
+        root2(
+            std::bind(&TestSm::Root2_Entry, this),
+            std::bind(&TestSm::Root2_Event, this, std::placeholders::_1),
+            std::bind(&TestSm::Root2_Exit, this),
+            nullptr, "Root2")
     {
     LOG_INF("Test SM created.");
 
@@ -34,6 +44,8 @@ TestSm::TestSm(
     addState(&root);
     addState(&state1);
     addState(&state2);
+    addState(&state2A);
+    addState(&root2);
     addTimer(&timer);
 
     // Setup initial transition
@@ -48,6 +60,16 @@ void TestSm::fireTestEvent1() {
 void TestSm::fireRootEvent()
 {
     sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
+}
+
+void TestSm::gotoState2A()
+{
+    sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_2A, nullptr));
+}
+
+void TestSm::gotoStateRoot2()
+{
+    sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2, nullptr));
 }
 
 void TestSm::addToCallstack(const char * functionName) {
@@ -73,17 +95,27 @@ std::array<const char *, CALL_STACK_DEPTH> TestSm::getCallstackAndClear() {
 
 void TestSm::Root_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("Root/Entry");
+    addToCallstack("Root_Entry");
 }
 
 void TestSm::Root_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
-    addToCallstack("Root/Event");
+    addToCallstack("Root_Event");
+
+    // Listen for GOTO_STATE_2A event
+    if (event.id == (uint8_t)TestSmEventId::GOTO_STATE_2A) {
+        queueTransition(&state2A);
+    }
+
+    // Listen for GOTO_STATE_ROOT2 event
+    if (event.id == (uint8_t)TestSmEventId::GOTO_STATE_ROOT2) {
+        queueTransition(&root2);
+    }
 }
 
 void TestSm::Root_Exit() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("Root/Exit");
+    addToCallstack("Root_Exit");
 }
 
 //============================================================
@@ -92,12 +124,12 @@ void TestSm::Root_Exit() {
 
 void TestSm::State1_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("State1/Entry");
+    addToCallstack("State1_Entry");
 }
 
 void TestSm::State1_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
-    addToCallstack("State1/Event");
+    addToCallstack("State1_Event");
     if (event.id == (uint8_t)TestSmEventId::TEST_EVENT_1) {
         queueTransition(&state2);
     }
@@ -105,7 +137,7 @@ void TestSm::State1_Event(Event event) {
 
 void TestSm::State1_Exit() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("State1/Exit");
+    addToCallstack("State1_Exit");
 }
 
 //============================================================
@@ -114,15 +146,53 @@ void TestSm::State1_Exit() {
 
 void TestSm::State2_Entry() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("State2/Entry");
+    addToCallstack("State2_Entry");
 }
 
 void TestSm::State2_Event(Event event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
-    addToCallstack("State2/Event");
+    addToCallstack("State2_Event");
 }
 
 void TestSm::State2_Exit() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-    addToCallstack("State2/Exit");
+    addToCallstack("State2_Exit");
+}
+
+//============================================================
+// STATE: Root/State2/State2A
+//============================================================
+
+void TestSm::State2A_Entry() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+    addToCallstack("State2A_Entry");
+}
+
+void TestSm::State2A_Event(Event event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+    addToCallstack("State2A_Event");
+}
+
+void TestSm::State2A_Exit() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+    addToCallstack("State2A_Exit");
+}
+
+//============================================================
+// STATE: Root2
+//============================================================
+
+void TestSm::Root2_Entry() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+    addToCallstack("Root2_Entry");
+}
+
+void TestSm::Root2_Event(Event event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+    addToCallstack("Root2_Event");
+}
+
+void TestSm::Root2_Exit() {
+    LOG_INF("%s called", __PRETTY_FUNCTION__);
+    addToCallstack("Root2_Exit");
 }

@@ -106,9 +106,13 @@ public:
         uint32_t threadStackSize_B,
         void (*threadFnAdapter)(void *, void *, void *));
 
-    //! Add a state to the state machine
-    //! @param state Pointer to the state to add. 
-    //!         State must remain in scope for the lifetime of the state machine.
+    /**
+     * @brief Add a state to the state machine.
+     * State transitions will still work without adding the state to the state machine.
+     * 
+     * @param state Pointer to the state to add.
+     * State must remain in scope for the lifetime of the state machine.
+    */
     void addState(State * state);
 
     void addTimer(Timer * timer) {
