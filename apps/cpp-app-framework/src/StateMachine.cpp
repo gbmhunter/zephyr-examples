@@ -21,10 +21,8 @@ StateMachine::StateMachine(uint8_t maxNumStates, z_thread_stack_element * thread
     this->states = static_cast<State**>(k_malloc(this->m_maxNumStates * sizeof(State*)));
 
     // Create message queue for receiving messages
-    const uint8_t sizeOfMsg = 10;
-    const uint8_t numMsgs = 10;
-    this->msgQueueBuffer = static_cast<char*>(k_malloc(numMsgs * sizeOfMsg));
-    k_msgq_init(&msgQueue, msgQueueBuffer, 10, 10);
+    this->msgQueueBuffer = static_cast<char*>(k_malloc(MSG_QUEUE_SIZE * MAX_MSG_SIZE_BYTES));
+    k_msgq_init(&msgQueue, msgQueueBuffer, MAX_MSG_SIZE_BYTES, MSG_QUEUE_SIZE);
 
     // Initialize SM mutex
     int rc = k_mutex_init(&mutex);
@@ -51,7 +49,7 @@ void StateMachine::start() {
 }
 
 void StateMachine::terminateThread() {
-    auto event = Event((uint8_t)EventId::TERMINATE_THREAD, nullptr);
+    auto event = Event((uint8_t)EventId::TERMINATE_THREAD);
     sendEvent(event);
 }
 
@@ -108,7 +106,7 @@ void StateMachine::threadFn()  {
         // an event is not received, we handle the next timer timeout at the correct
         // time.
         // TODO: Change hardcoded 10 to constant
-        char data[10];
+        char data[MAX_MSG_SIZE_BYTES];
         int queueRc = k_msgq_get(&msgQueue, &data, timeToWait);
 
         // Lock SM mutex until we get to the top of the loop again
@@ -147,6 +145,26 @@ State * StateMachine::currentState()
     // Unlock mutex
     k_mutex_unlock(&mutex);
     return currentState;
+}
+
+void StateMachine::sendEvent2(void * event, uint8_t size)  {
+    // Make sure event is not bigger than message size
+    // static_assert(sizeof(T) <= MSG_SIZE_BYTES, "Event size is too big for message queue");
+    __ASSERT(size <= MAX_MSG_SIZE_BYTES, "Event size of %u is bigger than the max. event size of %u.", size, MAX_MSG_SIZE_BYTES);
+
+    // Convert to char array
+    uint8_t data[MAX_MSG_SIZE_BYTES] = {0};
+    memcpy(data, event, size);
+
+    // Log the data we are about to put on the queue
+    // Print each byte as hex
+    LOG_DBG("Sending event to SM: ");
+    for (int i = 0; i < MAX_MSG_SIZE_BYTES; i++) {
+        // data[i] = -2;
+        LOG_DBG("0x%02X", data[i]);
+    }
+
+    k_msgq_put(&msgQueue, data, K_NO_WAIT);
 }
 
 //===========================================================================//

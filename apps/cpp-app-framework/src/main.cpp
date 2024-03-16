@@ -9,7 +9,9 @@
 
 LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
-K_THREAD_STACK_DEFINE(ledThreadStack, 1024);
+const uint32_t LED_THREAD_STACK_SIZE_B = 1024;
+
+K_THREAD_STACK_DEFINE(ledThreadStack, LED_THREAD_STACK_SIZE_B);
 
 Led * l_led = nullptr;
 
@@ -19,7 +21,7 @@ void ledThreadFnAdapter(void *, void *, void *) {
 
 int main(void) {
 
-    auto led = Led(ledThreadStack, &ledThreadFnAdapter);
+    auto led = Led(ledThreadStack, LED_THREAD_STACK_SIZE_B, &ledThreadFnAdapter);
     l_led = &led;
     led.start();
     // auto sm = StateMachine(10);

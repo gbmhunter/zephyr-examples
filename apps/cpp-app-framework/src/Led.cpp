@@ -8,8 +8,11 @@ LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 
 const uint8_t MAX_NUM_STATES = 10;
 
-Led::Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *)) :
-        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
+Led::Led(
+    z_thread_stack_element * threadStack,
+    uint32_t threadStackSize_B,
+    void (*threadFnAdapter)(void *, void *, void *)) :
+        StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter),
         root(
             std::bind(&Led::Root_Entry, this),
             std::bind(&Led::Root_Event, this, std::placeholders::_1),
@@ -40,25 +43,27 @@ void Led::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    auto event = Event((uint8_t)LedEventId::ON, nullptr);
-    sendEvent(event);
+    auto event = Event((uint8_t)LedEventId::ON);
+    sendEvent2(&event, sizeof(event));
 }
 
 void Led::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
 {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
-    char data[10];
-    BlinkEvent * event = reinterpret_cast<BlinkEvent*>(data);
-    event->id = (uint8_t)LedEventId::BLINK;
-    event->numTimes = numTimes;
-    event->onTime_ms = onTime_ms;
-    event->offTime_ms = offTime_ms;
+    // char data[10];
+    // BlinkEvent * event = reinterpret_cast<BlinkEvent*>(data);
+    // event->id = (uint8_t)LedEventId::BLINK;
+    // event->numTimes = numTimes;
+    // event->onTime_ms = onTime_ms;
+    // event->offTime_ms = offTime_ms;
+
+    BlinkEvent event(numTimes, onTime_ms, offTime_ms);
 
     // Send event to state machine
     // k_msgq_put(&msgQueue, &data, K_NO_WAIT);
     // auto event1 = Event(event);
-    sendEvent2(data);
+    sendEvent2(&event, sizeof(event));
 }
 
 //============================================================

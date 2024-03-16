@@ -15,38 +15,28 @@ enum class LedEventId {
     MAX_VALUE,
 };
 
+#pragma pack(push, 1)
 class BlinkEvent : public Event {
-    public:
-        uint8_t numTimes;
-        uint32_t onTime_ms;
-        uint32_t offTime_ms;
+public:
+    uint8_t numTimes;
+    uint32_t onTime_ms;
+    uint32_t offTime_ms;
 
-        BlinkEvent(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms) {
-            this->id = (uint8_t)LedEventId::BLINK;
-        }
+
+    BlinkEvent(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
+        :
+        Event((uint8_t)LedEventId::BLINK), 
+        numTimes(numTimes),
+        onTime_ms(onTime_ms),
+        offTime_ms(offTime_ms)
+    {
+    }
 };
-
-// class LedEvent {
-// public:
-//     LedEventId id;
-//     uint8_t data[10];
-
-//     LedEvent() {
-//         this->id = LedEventId::OFF;
-//         memset(this->data, 0, 10);
-//     }
-
-//     LedEvent(LedEventId id, const char * data) {
-//         this->id = id;
-//         if (data != nullptr) {
-//             memcpy(this->data, data, 10);
-//         }
-//     }
-// };
+#pragma pack(pop)
 
 class Led: public StateMachine {
     public:
-        Led(z_thread_stack_element * threadStack,  void (*threadFnAdapter)(void *, void *, void *));
+        Led(z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *));
 
         void turnOn();
 

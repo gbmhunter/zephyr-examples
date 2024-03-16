@@ -7,6 +7,9 @@
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 
+const uint8_t MAX_MSG_SIZE_BYTES = 20;
+const uint8_t MSG_QUEUE_SIZE = 10;
+
 enum class EventId {
     TERMINATE_THREAD,
     MAX_VALUE,
@@ -22,11 +25,8 @@ public:
         // memset(this->data, 0, 10);
     }
 
-    Event(uint8_t id, const char * data) {
+    Event(uint8_t id) {
         this->id = id;
-        // if (data != nullptr) {
-        //     memcpy(this->data, data, 10);
-        // }
     }
 };
 
@@ -144,9 +144,7 @@ public:
         k_msgq_put(&msgQueue, &event, K_NO_WAIT);
     }
 
-    void sendEvent2(char * data)  {
-        k_msgq_put(&msgQueue, data, K_NO_WAIT);
-    }
+    void sendEvent2(void * event, uint8_t size);
 
     void queueTransition(State * state)  {
         // Save state to transition to
