@@ -54,22 +54,29 @@ TestSm::TestSm(
 
 void TestSm::fireTestEvent1() {
     // Send event to state machine
-    sendEvent(Event((uint8_t)TestSmEventId::TEST_EVENT_1, nullptr));
+    auto event = Event((uint8_t)TestSmEventId::TEST_EVENT_1);
+    sendEvent2(&event, sizeof(event));
 }
 
 void TestSm::fireRootEvent()
 {
-    sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
+    // sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
+    auto event = Event((uint8_t)TestSmEventId::ROOT_EVENT);
+    sendEvent2(&event, sizeof(event));
 }
 
 void TestSm::gotoState2A()
 {
-    sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_2A, nullptr));
+    // sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_2A, nullptr));
+    auto event = Event((uint8_t)TestSmEventId::GOTO_STATE_2A);
+    sendEvent2(&event, sizeof(event));
 }
 
 void TestSm::gotoStateRoot2()
 {
-    sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2, nullptr));
+    // sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2, nullptr));
+    auto event = Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2);
+    sendEvent2(&event, sizeof(event));
 }
 
 void TestSm::addToCallstack(const char * functionName) {
@@ -98,17 +105,17 @@ void TestSm::Root_Entry() {
     addToCallstack("Root_Entry");
 }
 
-void TestSm::Root_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void TestSm::Root_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("Root_Event");
 
     // Listen for GOTO_STATE_2A event
-    if (event.id == (uint8_t)TestSmEventId::GOTO_STATE_2A) {
+    if (event->id == (uint8_t)TestSmEventId::GOTO_STATE_2A) {
         queueTransition(&state2A);
     }
 
     // Listen for GOTO_STATE_ROOT2 event
-    if (event.id == (uint8_t)TestSmEventId::GOTO_STATE_ROOT2) {
+    if (event->id == (uint8_t)TestSmEventId::GOTO_STATE_ROOT2) {
         queueTransition(&root2);
     }
 }
@@ -127,10 +134,10 @@ void TestSm::State1_Entry() {
     addToCallstack("State1_Entry");
 }
 
-void TestSm::State1_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void TestSm::State1_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("State1_Event");
-    if (event.id == (uint8_t)TestSmEventId::TEST_EVENT_1) {
+    if (event->id == (uint8_t)TestSmEventId::TEST_EVENT_1) {
         queueTransition(&state2);
     }
 }
@@ -149,8 +156,8 @@ void TestSm::State2_Entry() {
     addToCallstack("State2_Entry");
 }
 
-void TestSm::State2_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void TestSm::State2_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("State2_Event");
 }
 
@@ -168,8 +175,8 @@ void TestSm::State2A_Entry() {
     addToCallstack("State2A_Entry");
 }
 
-void TestSm::State2A_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void TestSm::State2A_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("State2A_Event");
 }
 
@@ -187,8 +194,8 @@ void TestSm::Root2_Entry() {
     addToCallstack("Root2_Entry");
 }
 
-void TestSm::Root2_Event(Event event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event.id);
+void TestSm::Root2_Event(Event * event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("Root2_Event");
 }
 
