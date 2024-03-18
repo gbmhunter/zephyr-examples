@@ -35,7 +35,7 @@ App::App()
     m_masterSm(masterThreadStack,
                 MASTER_THREAD_STACK_SIZE_B,
                 &masterThreadFnAdapter,
-                &m_smc),
+                this),
     m_led(ledThreadStack,
             LED_THREAD_STACK_SIZE_B,
             &ledThreadFnAdapter,
