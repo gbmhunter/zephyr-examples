@@ -14,8 +14,10 @@ StateMachine::StateMachine(
     z_thread_stack_element * threadStack,
     uint32_t threadStackSize_B,
     void (*threadFnAdapter)(void *, void *, void *),
-    StateMachineController * smc) :
+    StateMachineController * smc,
+    const char * name) :
         m_smc(smc),
+        m_name(name),
         m_numStates(0),
         m_maxNumStates(maxNumStates),
         states(nullptr),
@@ -41,6 +43,9 @@ StateMachine::StateMachine(
                                     NULL, NULL, NULL,
                                     5, 0,
                                     K_FOREVER); // Don't start the thread yet
+
+    // Register this state machine with the SMC
+    m_smc->registerStateMachine(this);
 
     printf("StateMachine created\n");
 }
@@ -74,15 +79,14 @@ void StateMachine::addState(State * state) {
 void StateMachine::threadFn()  {
     LOG_DBG("Thread function for SM started...");
 
+    __ASSERT(this != nullptr, "The state machine \"this\" was equal to nullptr. Did you forget to assign to the static pointer which the adapter function uses?");
     // Lock mutex, this will be unlocked just before we block on the message queue
     k_mutex_lock(&mutex, K_FOREVER);
 
     // Perform initial transition from no current state to the initial state as
     // stored in m_nextState.
-    LOG_DBG("Test1");
-    LOG_DBG("this: %p", this);
-    __ASSERT(this->m_nextState != nullptr, "No initial state set for state machine.");
-    LOG_DBG("Test3");
+    __ASSERT(this->m_nextState != nullptr,
+             "No initial state set for state machine \"%s\".", this->m_name);
     LOG_DBG("Calling entry functions for initial state %s...", this->m_nextState->name);
     executeTransition(this->m_nextState);
 
@@ -164,11 +168,11 @@ void StateMachine::sendEvent2(void * event, uint8_t size)  {
 
     // Log the data we are about to put on the queue
     // Print each byte as hex
-    LOG_DBG("Sending event to SM: ");
-    for (int i = 0; i < MAX_MSG_SIZE_BYTES; i++) {
-        // data[i] = -2;
-        LOG_DBG("0x%02X", data[i]);
-    }
+    // LOG_DBG("Sending event to SM: ");
+    // for (int i = 0; i < MAX_MSG_SIZE_BYTES; i++) {
+    //     // data[i] = -2;
+    //     LOG_DBG("0x%02X", data[i]);
+    // }
 
     k_msgq_put(&msgQueue, data, K_NO_WAIT);
 }

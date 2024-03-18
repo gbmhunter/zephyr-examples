@@ -9,7 +9,7 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
                    void (*threadFnAdapter)(void *, void *, void *),
                    StateMachineController * smc)
     :
-        StateMachine(10, threadStack, threadStackSize_B, threadFnAdapter, smc),
+        StateMachine(10, threadStack, threadStackSize_B, threadFnAdapter, smc, "MasterSm"),
         root(
             std::bind(&MasterSm::Root_Entry, this),
             std::bind(&MasterSm::Root_Event, this, std::placeholders::_1),
@@ -17,4 +17,22 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
             nullptr, "Root")
 {
     LOG_INF("Master SM created.");
+
+    initialTransition(&root);
+}
+
+//============================================================
+// STATE: Root
+//============================================================
+
+void MasterSm::Root_Entry() {
+    LOG_INF("Root_Entry");
+}
+
+void MasterSm::Root_Event(Event* event) {
+    LOG_INF("Root_Event");
+}
+
+void MasterSm::Root_Exit() {
+    LOG_INF("Root_Exit");
 }

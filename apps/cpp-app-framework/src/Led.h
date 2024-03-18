@@ -40,7 +40,8 @@ class Led: public StateMachine {
             z_thread_stack_element * threadStack,
             uint32_t threadStackSize_B,
             void (*threadFnAdapter)(void *, void *, void *),
-            StateMachineController * smc);
+            StateMachineController * smc,
+            const char * name);
 
         void turnOn();
 

@@ -11,9 +11,10 @@ const uint8_t MAX_NUM_STATES = 10;
 Led::Led(z_thread_stack_element * threadStack,
          uint32_t threadStackSize_B,
          void (*threadFnAdapter)(void *, void *, void *),
-         StateMachineController * smc)
+         StateMachineController * smc,
+         const char * name)
     :
-        StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter, smc),
+        StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter, smc, name),
         root(
             std::bind(&Led::Root_Entry, this),
             std::bind(&Led::Root_Event, this, std::placeholders::_1),

@@ -6,49 +6,48 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "Led.h"
+#include "MasterSm.hpp"
 #include "StateMachine.h"
 #include "StateMachineController.h"
 
 LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
+// MASTER SM
+const uint32_t MASTER_THREAD_STACK_SIZE_B = 1024;
+K_THREAD_STACK_DEFINE(masterThreadStack, MASTER_THREAD_STACK_SIZE_B);
+MasterSm * l_masterSm = nullptr;
+void masterThreadFnAdapter(void *, void *, void *) {
+    l_masterSm->threadFn();
+}
+
+// LED SM
 const uint32_t LED_THREAD_STACK_SIZE_B = 1024;
-
 K_THREAD_STACK_DEFINE(ledThreadStack, LED_THREAD_STACK_SIZE_B);
-
 Led * l_led = nullptr;
-
 void ledThreadFnAdapter(void *, void *, void *) {
     l_led->threadFn();
 }
-
-// struct acc_msg {
-// 	int x;
-// 	int y;
-// 	int z;
-// };
-
-// ZBUS_CHAN_DEFINE(acc_data_chan,  /* Name */
-// 		 struct acc_msg, /* Message type */
-
-// 		 NULL,                                 /* Validator */
-// 		 NULL,                                 /* User data */
-// 		 ZBUS_OBSERVERS(bar_sub),     /* observers */
-// 		 ZBUS_MSG_INIT(.x = 0, .y = 0, .z = 0) /* Initial value */
-// );
-
-// ZBUS_SUBSCRIBER_DEFINE(bar_sub, 4);
 
 int main(void)
 {
     StateMachineController smc;
 
-    auto led = Led(ledThreadStack, LED_THREAD_STACK_SIZE_B, &ledThreadFnAdapter, &smc);
+    auto masterSm = MasterSm(masterThreadStack,
+                             MASTER_THREAD_STACK_SIZE_B,
+                             &masterThreadFnAdapter,
+                             &smc);
+    l_masterSm = &masterSm;
+
+    auto led = Led(ledThreadStack,
+                   LED_THREAD_STACK_SIZE_B,
+                   &ledThreadFnAdapter,
+                   &smc,
+                   "Led1Sm");
     l_led = &led;
 
-    led.start();
-    // auto sm = StateMachine(10);
+    // Start all the state machines
+    smc.startAll();
 
-    // printf("Hello, world!\n");
     k_msleep(1000);
     led.turnOn();
 

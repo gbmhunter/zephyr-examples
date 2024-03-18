@@ -112,7 +112,8 @@ public:
         z_thread_stack_element * threadStack,
         uint32_t threadStackSize_B,
         void (*threadFnAdapter)(void *, void *, void *),
-        StateMachineController * smc);
+        StateMachineController * smc,
+        const char * name);
 
     /**
      * @brief Add a state to the state machine.
@@ -168,9 +169,14 @@ public:
         this->m_terminateThread = true;
     }
 
+    const char * getName() {
+        return this->m_name;
+    }
+
 private:
 
     StateMachineController * m_smc;
+    const char * m_name;
 
     uint8_t m_numStates;
     uint8_t m_maxNumStates;
