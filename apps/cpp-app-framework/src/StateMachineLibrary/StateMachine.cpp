@@ -3,7 +3,7 @@
 
 #include "StateMachine.h"
 
-LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_INF);
 
 //===========================================================================//
 // PUBLIC METHOD DEFINITIONS

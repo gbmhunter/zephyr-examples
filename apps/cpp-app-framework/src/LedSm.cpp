@@ -2,7 +2,7 @@
 
 #include <zephyr/logging/log.h>
 
-#include "Led.h"
+#include "LedSm.hpp"
 
 LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 

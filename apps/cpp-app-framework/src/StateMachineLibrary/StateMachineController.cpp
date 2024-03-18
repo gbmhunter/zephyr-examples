@@ -2,7 +2,7 @@
 
 #include "StateMachineController.h"
 
-LOG_MODULE_REGISTER(StateMachineController, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(StateMachineController, LOG_LEVEL_INF);
 
 void StateMachineController::registerStateMachine(StateMachine * stateMachine)
 {

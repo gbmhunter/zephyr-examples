@@ -6,9 +6,8 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "App.hpp"
-#include "Led.h"
 #include "MasterSm.hpp"
-// #include "StateMachine.h"
+
 #include "StateMachineLibrary/StateMachineController.h"
 
 LOG_MODULE_REGISTER(App, LOG_LEVEL_DBG);
@@ -19,6 +18,14 @@ K_THREAD_STACK_DEFINE(masterThreadStack, MASTER_THREAD_STACK_SIZE_B);
 MasterSm * l_masterSm = nullptr;
 void masterThreadFnAdapter(void *, void *, void *) {
     l_masterSm->threadFn();
+}
+
+// SECOND SM
+const uint32_t SECOND_THREAD_STACK_SIZE_B = 1024;
+K_THREAD_STACK_DEFINE(secondThreadStack, SECOND_THREAD_STACK_SIZE_B);
+SecondSm * l_secondSm = nullptr;
+void secondThreadFnAdapter(void *, void *, void *) {
+    l_secondSm->threadFn();
 }
 
 // LED SM
@@ -36,6 +43,10 @@ App::App()
                 MASTER_THREAD_STACK_SIZE_B,
                 &masterThreadFnAdapter,
                 this),
+    m_secondSm(secondThreadStack,
+                SECOND_THREAD_STACK_SIZE_B,
+                &secondThreadFnAdapter,
+                this),
     m_led(ledThreadStack,
             LED_THREAD_STACK_SIZE_B,
             &ledThreadFnAdapter,
@@ -44,6 +55,7 @@ App::App()
 {
 
     l_masterSm = &m_masterSm;
+    l_secondSm = &m_secondSm;
     l_led = &m_led;
     LOG_INF("App created.");
 }

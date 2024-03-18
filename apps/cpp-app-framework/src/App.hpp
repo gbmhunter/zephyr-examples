@@ -4,8 +4,9 @@ class App;
 
 #include "StateMachineLibrary/StateMachineController.h"
 
+#include "LedSm.hpp"
 #include "MasterSm.hpp"
-#include "Led.h"
+#include "SecondSm.hpp"
 
 class App
 {
@@ -21,5 +22,6 @@ class App
     StateMachineController m_smc;
 
     MasterSm m_masterSm;
+    SecondSm m_secondSm;
     Led m_led;
 };
