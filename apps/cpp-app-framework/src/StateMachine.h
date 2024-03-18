@@ -1,9 +1,16 @@
 #pragma once
 
+class StateMachine;
+class Event;
+
 #include <functional>
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+
+
+
+#include "StateMachineController.h"
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 
@@ -104,7 +111,8 @@ public:
         uint8_t maxNumStates,
         z_thread_stack_element * threadStack,
         uint32_t threadStackSize_B,
-        void (*threadFnAdapter)(void *, void *, void *));
+        void (*threadFnAdapter)(void *, void *, void *),
+        StateMachineController * smc);
 
     /**
      * @brief Add a state to the state machine.
@@ -161,6 +169,9 @@ public:
     }
 
 private:
+
+    StateMachineController * m_smc;
+
     uint8_t m_numStates;
     uint8_t m_maxNumStates;
     State ** states;

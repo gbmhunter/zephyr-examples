@@ -8,11 +8,12 @@ LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
 
 const uint8_t MAX_NUM_STATES = 10;
 
-Led::Led(
-    z_thread_stack_element * threadStack,
-    uint32_t threadStackSize_B,
-    void (*threadFnAdapter)(void *, void *, void *)) :
-        StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter),
+Led::Led(z_thread_stack_element * threadStack,
+         uint32_t threadStackSize_B,
+         void (*threadFnAdapter)(void *, void *, void *),
+         StateMachineController * smc)
+    :
+        StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter, smc),
         root(
             std::bind(&Led::Root_Entry, this),
             std::bind(&Led::Root_Event, this, std::placeholders::_1),
@@ -28,8 +29,12 @@ Led::Led(
             std::bind(&Led::On_Event, this, std::placeholders::_1),
             std::bind(&Led::On_Exit, this),
             &root, "On")
-    {
+{
     LOG_INF("Led created\n");
+
+    // Register events
+    // auto eventId = EventId("BlinkEvent");
+    blinkEventId = smc->registerEvent();
 
 
     addState(&off);
@@ -64,6 +69,7 @@ void Led::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
     // k_msgq_put(&msgQueue, &data, K_NO_WAIT);
     // auto event1 = Event(event);
     sendEvent2(&event, sizeof(event));
+    // smc->sendEvent(blinkEventId, &event, sizeof(event));
 }
 
 //============================================================

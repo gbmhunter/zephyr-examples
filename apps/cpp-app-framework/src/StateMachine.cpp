@@ -9,7 +9,13 @@ LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_DBG);
 // PUBLIC METHOD DEFINITIONS
 //===========================================================================//
 
-StateMachine::StateMachine(uint8_t maxNumStates, z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *)) :
+StateMachine::StateMachine(
+    uint8_t maxNumStates,
+    z_thread_stack_element * threadStack,
+    uint32_t threadStackSize_B,
+    void (*threadFnAdapter)(void *, void *, void *),
+    StateMachineController * smc) :
+        m_smc(smc),
         m_numStates(0),
         m_maxNumStates(maxNumStates),
         states(nullptr),

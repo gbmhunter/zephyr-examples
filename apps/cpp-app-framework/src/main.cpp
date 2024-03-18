@@ -7,6 +7,7 @@
 
 #include "Led.h"
 #include "StateMachine.h"
+#include "StateMachineController.h"
 
 LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
@@ -20,27 +21,30 @@ void ledThreadFnAdapter(void *, void *, void *) {
     l_led->threadFn();
 }
 
-struct acc_msg {
-	int x;
-	int y;
-	int z;
-};
+// struct acc_msg {
+// 	int x;
+// 	int y;
+// 	int z;
+// };
 
-ZBUS_CHAN_DEFINE(acc_data_chan,  /* Name */
-		 struct acc_msg, /* Message type */
+// ZBUS_CHAN_DEFINE(acc_data_chan,  /* Name */
+// 		 struct acc_msg, /* Message type */
 
-		 NULL,                                 /* Validator */
-		 NULL,                                 /* User data */
-		 ZBUS_OBSERVERS(bar_sub),     /* observers */
-		 ZBUS_MSG_INIT(.x = 0, .y = 0, .z = 0) /* Initial value */
-);
+// 		 NULL,                                 /* Validator */
+// 		 NULL,                                 /* User data */
+// 		 ZBUS_OBSERVERS(bar_sub),     /* observers */
+// 		 ZBUS_MSG_INIT(.x = 0, .y = 0, .z = 0) /* Initial value */
+// );
 
-ZBUS_SUBSCRIBER_DEFINE(bar_sub, 4);
+// ZBUS_SUBSCRIBER_DEFINE(bar_sub, 4);
 
-int main(void) {
+int main(void)
+{
+    StateMachineController smc;
 
-    auto led = Led(ledThreadStack, LED_THREAD_STACK_SIZE_B, &ledThreadFnAdapter);
+    auto led = Led(ledThreadStack, LED_THREAD_STACK_SIZE_B, &ledThreadFnAdapter, &smc);
     l_led = &led;
+
     led.start();
     // auto sm = StateMachine(10);
 
@@ -53,17 +57,18 @@ int main(void) {
     // Make the LED flash
     led.blink(5, 1000, 1000);
 
-    const struct zbus_channel *chan;
 
-	while (!zbus_sub_wait(&bar_sub, &chan, K_FOREVER)) {
-		struct acc_msg acc;
+    // const struct zbus_channel *chan;
 
-		if (&acc_data_chan == chan) {
-			zbus_chan_read(&acc_data_chan, &acc, K_MSEC(500));
+	// while (!zbus_sub_wait(&bar_sub, &chan, K_FOREVER)) {
+	// 	struct acc_msg acc;
 
-			LOG_INF("From subscriber -> Acc x=%d, y=%d, z=%d", acc.x, acc.y, acc.z);
-		}
-	}
+	// 	if (&acc_data_chan == chan) {
+	// 		zbus_chan_read(&acc_data_chan, &acc, K_MSEC(500));
+
+	// 		LOG_INF("From subscriber -> Acc x=%d, y=%d, z=%d", acc.x, acc.y, acc.z);
+	// 	}
+	// }
     
     LOG_DBG("Terminating thread\n");
     led.terminateThread();

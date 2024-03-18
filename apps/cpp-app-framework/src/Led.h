@@ -36,13 +36,19 @@ public:
 
 class Led: public StateMachine {
     public:
-        Led(z_thread_stack_element * threadStack, uint32_t threadStackSize_B, void (*threadFnAdapter)(void *, void *, void *));
+        Led(
+            z_thread_stack_element * threadStack,
+            uint32_t threadStackSize_B,
+            void (*threadFnAdapter)(void *, void *, void *),
+            StateMachineController * smc);
 
         void turnOn();
 
         void blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms);
 
     private:
+
+        uint8_t blinkEventId;
 
 
         State root;
