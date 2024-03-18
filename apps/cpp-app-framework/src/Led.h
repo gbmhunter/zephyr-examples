@@ -5,7 +5,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "StateMachine.h"
+#include "StateMachineLibrary/StateMachine.h"
 
 enum class LedEventId {
     ON = (uint8_t)EventId::MAX_VALUE,

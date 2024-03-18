@@ -5,8 +5,9 @@ project(my_zephyr_app)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+target_sources(app PRIVATE src/App.cpp)
 target_sources(app PRIVATE src/main.cpp)
 target_sources(app PRIVATE src/Led.cpp)
-target_sources(app PRIVATE src/StateMachine.cpp)
-target_sources(app PRIVATE src/StateMachineController.cpp)
+target_sources(app PRIVATE src/StateMachineLibrary/StateMachine.cpp)
+target_sources(app PRIVATE src/StateMachineLibrary/StateMachineController.cpp)
 target_sources(app PRIVATE src/MasterSm.cpp)

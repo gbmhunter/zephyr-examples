@@ -1,4 +1,6 @@
-#include "StateMachine.h"
+#pragma once
+
+#include "StateMachineLibrary/StateMachine.h"
 
 class MasterSm : public StateMachine {
 public:
