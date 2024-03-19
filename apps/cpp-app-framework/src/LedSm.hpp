@@ -7,44 +7,51 @@
 
 #include "StateMachineLibrary/StateMachine.h"
 
-enum class LedEventId {
-    ON = (uint8_t)EventId::MAX_VALUE,
-    OFF,
-    TIMER_EXPIRED,
-    BLINK,
-    MAX_VALUE,
-};
+//================================================================================================//
+// EVENTS
+//================================================================================================//
 
+#pragma pack(push, 1)
 class OnEvent : public Event {
 public:
-    OnEvent() : Event()
+    OnEvent() : Event(TypeID::value<OnEvent>(), "LedSm::OnEvent")
     {
+        // nothing to do
     }
 };
 
-
-#pragma pack(push, 1)
 class BlinkEvent : public Event {
 public:
     uint8_t numTimes;
     uint32_t onTime_ms;
     uint32_t offTime_ms;
 
-
     BlinkEvent(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
         :
-        Event((uint8_t)LedEventId::BLINK),
+        Event(TypeID::value<BlinkEvent>(), "LedSm::BlinkEvent"),
         numTimes(numTimes),
         onTime_ms(onTime_ms),
         offTime_ms(offTime_ms)
     {
     }
 };
+
+class TimerExpiryEvent : public Event {
+public:
+    TimerExpiryEvent() : Event(TypeID::value<TimerExpiryEvent>(), "LedSm::TimerExpiryEvent")
+    {
+        // nothing to do
+    }
+};
 #pragma pack(pop)
 
-class Led: public StateMachine {
+//================================================================================================//
+// STATE MACHINE
+//================================================================================================//
+
+class LedSm: public StateMachine {
     public:
-        Led(
+        LedSm(
             z_thread_stack_element * threadStack,
             uint32_t threadStackSize_B,
             void (*threadFnAdapter)(void *, void *, void *),
@@ -57,9 +64,6 @@ class Led: public StateMachine {
 
 
     private:
-
-        uint8_t blinkEventId;
-
 
         State root;
         void Root_Entry();

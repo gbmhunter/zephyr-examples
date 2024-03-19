@@ -3,7 +3,7 @@
 
 #include "StateMachine.h"
 
-LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_INF);
+LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_DBG);
 
 size_t TypeID::counter = 0;
 
@@ -49,7 +49,7 @@ StateMachine::StateMachine(
     // Register this state machine with the SMC
     m_smc->registerStateMachine(this);
 
-    printf("StateMachine created\n");
+    LOG_DBG("StateMachine created.");
 }
 
 void StateMachine::initialTransition(State * state) {
@@ -62,7 +62,7 @@ void StateMachine::start() {
 }
 
 void StateMachine::terminateThread() {
-    auto event = Event((uint8_t)EventId::TERMINATE_THREAD);
+    auto event = TerminateThreadEvent();
     sendEvent(event);
 }
 
@@ -108,7 +108,7 @@ void StateMachine::threadFn()  {
                 LOG_DBG("Time to wait in ticks: %lld.", timeToWait_ticks);
             }
         } else {
-            LOG_DBG("No timer set, waiting forever for message.");
+            LOG_DBG("%s: No timer set, waiting forever for message.", this->m_name);
         }
 
         // Just about to block on message queue, so unlock SM mutex
@@ -127,14 +127,14 @@ void StateMachine::threadFn()  {
         Event * event = reinterpret_cast<Event*>(&data);
 
         if (queueRc == 0) {
-            LOG_DBG("SM thread received event.");
-            if (event->id == (uint8_t)EventId::TERMINATE_THREAD) {
-                LOG_DBG("Terminate thread event received. Returning from the thread function...");
+            LOG_DBG("%s: SM received event with id: %u, name: %s.", m_name, event->id, event->m_name);
+            if (event->id == TypeID::value<TerminateThreadEvent>()) {
+                LOG_DBG("%s: Terminate thread event received. Returning from the thread function...", m_name);
                 return;
             }
             processEvent(event);
         } else {
-            LOG_DBG("SM timer expired.");
+            LOG_DBG("%s: SM timer expired.", this->m_name);
             processEvent(&this->timer->event);
             // Update timer
             this->timer->incrementNextFireTime();
@@ -212,6 +212,10 @@ void StateMachine::processEvent(Event* event)  {
 }
 
 void StateMachine::executeTransition(State * nextState) {
+    LOG_INF("%s SM transitioning from %s to %s.",
+            m_name ? m_name : "<none>",
+            m_currentState ? m_currentState->name : "<none>",
+            nextState ? nextState->name : "<none>");
     // We need to find the common parent of the current state and the
     // next state.
     State * commonParentState = this->m_currentState;

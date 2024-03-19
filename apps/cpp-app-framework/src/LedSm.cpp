@@ -4,11 +4,11 @@
 
 #include "LedSm.hpp"
 
-LOG_MODULE_REGISTER(Led, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(LedSm, LOG_LEVEL_DBG);
 
 const uint8_t MAX_NUM_STATES = 10;
 
-Led::Led(z_thread_stack_element * threadStack,
+LedSm::LedSm(z_thread_stack_element * threadStack,
          uint32_t threadStackSize_B,
          void (*threadFnAdapter)(void *, void *, void *),
          StateMachineController * smc,
@@ -16,27 +16,22 @@ Led::Led(z_thread_stack_element * threadStack,
     :
         StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter, smc, name),
         root(
-            std::bind(&Led::Root_Entry, this),
-            std::bind(&Led::Root_Event, this, std::placeholders::_1),
-            std::bind(&Led::Root_Exit, this),
+            std::bind(&LedSm::Root_Entry, this),
+            std::bind(&LedSm::Root_Event, this, std::placeholders::_1),
+            std::bind(&LedSm::Root_Exit, this),
             nullptr, "Root"),
         off(
-            std::bind(&Led::Off_Entry, this),
-            std::bind(&Led::Off_Event, this, std::placeholders::_1),
-            std::bind(&Led::Off_Exit, this),
+            std::bind(&LedSm::Off_Entry, this),
+            std::bind(&LedSm::Off_Event, this, std::placeholders::_1),
+            std::bind(&LedSm::Off_Exit, this),
             &root, "Off"),
         on(
-            std::bind(&Led::On_Entry, this),
-            std::bind(&Led::On_Event, this, std::placeholders::_1),
-            std::bind(&Led::On_Exit, this),
+            std::bind(&LedSm::On_Entry, this),
+            std::bind(&LedSm::On_Event, this, std::placeholders::_1),
+            std::bind(&LedSm::On_Exit, this),
             &root, "On")
 {
-    LOG_INF("Led created\n");
-
-    // Register events
-    // auto eventId = EventId("BlinkEvent");
-    blinkEventId = smc->registerEvent();
-
+    LOG_DBG("Led created\n");
 
     addState(&off);
     addTimer(&timer);
@@ -45,46 +40,35 @@ Led::Led(z_thread_stack_element * threadStack,
     initialTransition(&off);
 }
 
-void Led::turnOn() {
+void LedSm::turnOn() {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
 
     // Send event to state machine
-    auto event = Event((uint8_t)LedEventId::ON);
+    auto event = OnEvent();
     sendEvent2(&event, sizeof(event));
 }
 
-void Led::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
+void LedSm::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
 {
     LOG_INF("%s called", __PRETTY_FUNCTION__);
-
-    // char data[10];
-    // BlinkEvent * event = reinterpret_cast<BlinkEvent*>(data);
-    // event->id = (uint8_t)LedEventId::BLINK;
-    // event->numTimes = numTimes;
-    // event->onTime_ms = onTime_ms;
-    // event->offTime_ms = offTime_ms;
-
     BlinkEvent event(numTimes, onTime_ms, offTime_ms);
 
     // Send event to state machine
-    // k_msgq_put(&msgQueue, &data, K_NO_WAIT);
-    // auto event1 = Event(event);
     sendEvent2(&event, sizeof(event));
-    // smc->sendEvent(blinkEventId, &event, sizeof(event));
 }
 
 //============================================================
 // STATE: Root
 //============================================================
 
-void Led::Root_Entry() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::Root_Entry() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Root_Event(Event* event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+void LedSm::Root_Event(Event* event) {
+    LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
 
-    if (event->id == (uint8_t)LedEventId::BLINK) {
+    if (event->id == (uint8_t)TypeID::value<BlinkEvent>()) {
         // Got blink event. Reinterp cast to BlinkEvent
         auto blinkEvent = reinterpret_cast<BlinkEvent*>(event);
 
@@ -96,22 +80,22 @@ void Led::Root_Event(Event* event) {
     return;
 }
 
-void Led::Root_Exit() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::Root_Exit() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 }
 
 //============================================================
 // STATE: Root/Off
 //============================================================
 
-void Led::Off_Entry() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::Off_Entry() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 }
 
-void Led::Off_Event(Event* event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+void LedSm::Off_Event(Event* event) {
+    LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
 
-    if (event->id == (uint8_t)LedEventId::ON) {
+    if (event->id == (uint8_t)TypeID::value<OnEvent>()) {
         // Transition to On state
         queueTransition(&on);
         return;
@@ -119,28 +103,33 @@ void Led::Off_Event(Event* event) {
     return;
 }
 
-void Led::Off_Exit() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::Off_Exit() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 }
 
 //============================================================
 // STATE: Root/On
 //============================================================
 
-void Led::On_Entry() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::On_Entry() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 
     // Start timer
-    Event event;
-    event.id = (uint8_t)LedEventId::TIMER_EXPIRED;
+    TimerExpiryEvent event;
     timer.start(k_ms_to_ticks_floor64(5*1000), event);
 }
 
-void Led::On_Event(Event * event) {
-    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+void LedSm::On_Event(Event * event) {
+    LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+    if (event->id == (uint8_t)TypeID::value<TimerExpiryEvent>()) {
+        // Timer expired
+        LOG_DBG("Timer expired.");
+        queueTransition(&off);
+        return;
+    }
     return;
 }
 
-void Led::On_Exit() {
-    LOG_INF("%s called", __PRETTY_FUNCTION__);
+void LedSm::On_Exit() {
+    LOG_DBG("%s called", __PRETTY_FUNCTION__);
 }

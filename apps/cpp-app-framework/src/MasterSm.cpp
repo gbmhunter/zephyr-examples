@@ -31,8 +31,9 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
 void MasterSm::Root_Entry() {
     LOG_INF("Root_Entry");
 
-    // Start LED flashing
-    app->getLedSm()->blink(5, 100, 100);
+    // Turn LED on
+    OnEvent onEvent;
+    app->getLedSm()->sendEvent2(&onEvent, sizeof(onEvent));
 
     // Send event to second SM
     // app->eventInfo->printHelloEvent->id

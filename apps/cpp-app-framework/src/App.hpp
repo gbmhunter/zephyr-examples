@@ -18,12 +18,12 @@ public:
 
     MasterSm * getMasterSm() { return &m_masterSm; }
     SecondSm * getSecondSm() { return &m_secondSm; }
-    Led * getLedSm() { return &m_ledSm; }
+    LedSm * getLedSm() { return &m_ledSm; }
 
 private:
     StateMachineController m_smc;
 
     MasterSm m_masterSm;
     SecondSm m_secondSm;
-    Led m_ledSm;
+    LedSm m_ledSm;
 };

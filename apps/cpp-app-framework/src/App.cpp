@@ -31,7 +31,7 @@ void secondThreadFnAdapter(void *, void *, void *) {
 // LED SM
 const uint32_t LED_THREAD_STACK_SIZE_B = 1024;
 K_THREAD_STACK_DEFINE(ledThreadStack, LED_THREAD_STACK_SIZE_B);
-Led * l_led = nullptr;
+LedSm * l_led = nullptr;
 void ledThreadFnAdapter(void *, void *, void *) {
     l_led->threadFn();
 }
@@ -59,13 +59,14 @@ App::App()
     l_led = &m_ledSm;
 
     // Register the events
-    
+
     LOG_INF("App created.");
 }
 
 void App::run(void)
 {
     // Start all the state machines
+    LOG_DBG("Starting all state machines...");
     m_smc.startAll();
 
     k_msleep(100*1000);

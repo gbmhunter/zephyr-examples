@@ -1,7 +1,13 @@
 #pragma once
 
+// FORWARD DECLARATIONS
+//==================================================================================================
+
 class StateMachine;
 class Event;
+
+// INCLUDES
+//==================================================================================================
 
 #include <functional>
 
@@ -10,8 +16,10 @@ class Event;
 
 #include "StateMachineController.h"
 
-const uint8_t MAX_NUM_NESTED_STATES = 10;
+// CONSTANTS
+//==================================================================================================
 
+const uint8_t MAX_NUM_NESTED_STATES = 10;
 const uint8_t MAX_MSG_SIZE_BYTES = 20;
 const uint8_t MSG_QUEUE_SIZE = 10;
 
@@ -28,21 +36,25 @@ public:
     }
 };
 
-enum class EventId {
-    TERMINATE_THREAD,
-    MAX_VALUE,
-};
-
 class Event {
 public:
     uint8_t id;
+    const char * m_name;
 
     Event() {
         this->id = 0;
     }
 
-    Event(uint8_t id) {
+    Event(uint8_t id, const char * name) {
         this->id = id;
+        this->m_name = name;
+    }
+};
+
+class TerminateThreadEvent : public Event {
+public:
+    TerminateThreadEvent() : Event(TypeID::value<TerminateThreadEvent>(), "TerminateThreadEvent")
+    {
     }
 };
 
