@@ -14,113 +14,36 @@ class Event;
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "Event.hpp"
+#include "State.hpp"
 #include "StateMachineController.h"
+#include "Timer.hpp"
 
+//================================================================================================//
 // CONSTANTS
-//==================================================================================================
+//================================================================================================//
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 const uint8_t MAX_MSG_SIZE_BYTES = 20;
 const uint8_t MSG_QUEUE_SIZE = 10;
 
-class TypeID
-{
-    static size_t counter;
-
-public:
-    template<typename T>
-    static size_t value()
-    {
-        static size_t id = counter++;
-        return id;
-    }
-};
-
-class Event {
-public:
-    uint8_t id;
-    const char * m_name;
-
-    Event() {
-        this->id = 0;
-    }
-
-    Event(uint8_t id, const char * name) {
-        this->id = id;
-        this->m_name = name;
-    }
-};
+//================================================================================================//
+// EVENTS
+//================================================================================================//
 
 class TerminateThreadEvent : public Event {
 public:
-    TerminateThreadEvent() : Event(TypeID::value<TerminateThreadEvent>(), "TerminateThreadEvent")
-    {
-    }
-};
-
-class Timer {
-public:
-    int64_t period_ticks;
-    int64_t startTime_ticks;
-    int64_t timeToNextFire_ticks;
-    bool m_isRunning;
-    Event event;
-
-    Timer() :
-        period_ticks(0),
-        startTime_ticks(0),
-        timeToNextFire_ticks(0),
-        m_isRunning(false)
+    TerminateThreadEvent() 
+        :
+        Event(TypeID::value<TerminateThreadEvent>(), "StateMachine::TerminateThreadEvent")
     {
         // nothing to do
     }
-
-    void start(int64_t period_ticks, Event event) {
-        // Start timer
-        this->period_ticks = period_ticks;
-        this->event = event;
-
-        // Save current time to work out when next to fire
-        this->startTime_ticks = k_uptime_ticks();
-
-        this->timeToNextFire_ticks = this->startTime_ticks + this->period_ticks;
-
-        this->m_isRunning = true;
-    }
-
-    bool isRunning() {
-        return this->m_isRunning;
-    }
-
-    void incrementNextFireTime() {
-        this->timeToNextFire_ticks += this->period_ticks;
-    }
 };
 
-class State {
-public:
-    State(
-        std::function<void()> entryFn,
-        std::function<void(Event*)> eventFn,
-        std::function<void()> exitFn,
-        State * parent = nullptr,
-        const char * name = "<unknown>") :
-        entryFn(entryFn),
-        eventFn(eventFn),
-        exitFn(exitFn),
-        parent(parent),
-        name(name)
-    {
-        // nothing to do
-    }
-
-    std::function<void()> entryFn;
-    std::function<void(Event*)> eventFn;
-    std::function<void()> exitFn;
-
-    State * parent;
-    const char * name;
-};
+//================================================================================================//
+// CLASS DECLARATION
+//================================================================================================//
 
 class StateMachine {
 
@@ -134,7 +57,8 @@ public:
         uint32_t threadStackSize_B,
         void (*threadFnAdapter)(void *, void *, void *),
         StateMachineController * smc,
-        const char * name);
+        const char * name,
+        uint8_t maxNumTimers = 5);
 
     /**
      * @brief Add a state to the state machine.
@@ -145,11 +69,14 @@ public:
     */
     void addState(State * state);
 
-    void addTimer(Timer * timer) {
-        this->timer = timer;
+    void registerTimer(Timer * timer) {
+        // Check if there is space for the timer
+        __ASSERT_NO_MSG(m_numTimers + 1 <= m_maxNumTimers);
+        timers[m_numTimers] = timer;
+        m_numTimers++;
     }
 
-    void initialTransition(State * state);
+    void setInitialTransition(State * state);
 
     // Start the state machine thread.
     void start();
@@ -215,7 +142,9 @@ private:
     z_thread_stack_element * threadStack;
     struct k_thread thread;
 
-    Timer * timer;
+    Timer ** timers;
+    uint8_t m_numTimers;
+    uint8_t m_maxNumTimers;
 
 
     //! Processes an event that has been received on the message queue.

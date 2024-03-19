@@ -34,10 +34,10 @@ LedSm::LedSm(z_thread_stack_element * threadStack,
     LOG_DBG("Led created\n");
 
     addState(&off);
-    addTimer(&timer);
+    registerTimer(&timer);
 
     // Setup initial transition
-    initialTransition(&off);
+    setInitialTransition(&off);
 }
 
 void LedSm::turnOn() {

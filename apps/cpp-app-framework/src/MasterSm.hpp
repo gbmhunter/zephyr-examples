@@ -18,4 +18,7 @@ private:
     void Root_Entry();
     void Root_Event(Event* event);
     void Root_Exit();
+
+    Timer timer1;
+    Timer timer2;
 };

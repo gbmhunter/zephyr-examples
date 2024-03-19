@@ -20,7 +20,7 @@ SecondSm::SecondSm(z_thread_stack_element * threadStack,
 {
     LOG_INF("SecondSM created.");
 
-    initialTransition(&root);
+    setInitialTransition(&root);
 }
 
 //============================================================

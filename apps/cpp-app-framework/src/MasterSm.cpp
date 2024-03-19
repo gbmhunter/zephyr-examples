@@ -21,7 +21,11 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
 {
     LOG_INF("Master SM created.");
 
-    initialTransition(&root);
+    // Register timers
+    registerTimer(&timer1);
+    registerTimer(&timer2);
+
+    setInitialTransition(&root);
 }
 
 //============================================================
@@ -32,16 +36,20 @@ void MasterSm::Root_Entry() {
     LOG_INF("Root_Entry");
 
     // Turn LED on
-    OnEvent onEvent;
-    app->getLedSm()->sendEvent2(&onEvent, sizeof(onEvent));
+    // OnEvent onEvent;
+    // app->getLedSm()->sendEvent2(&onEvent, sizeof(onEvent));
 
     // Send event to second SM
     // app->eventInfo->printHelloEvent->id
 
-    PrintHelloEvent event;
-    LOG_DBG("event.id: %d", event.id);
-    event.someData = 0;
-    app->getSecondSm()->sendEvent2(&event, sizeof(event));
+    // PrintHelloEvent event;
+    // LOG_DBG("event.id: %d", event.id);
+    // event.someData = 0;
+    // app->getSecondSm()->sendEvent2(&event, sizeof(event));
+
+    // Setup some timers
+    TimerExpiryEvent timer1ExpiryEvent;
+    timer1.start(k_ms_to_ticks_floor64(1*1000), timer1ExpiryEvent);
 }
 
 void MasterSm::Root_Event(Event* event) {

@@ -17,7 +17,8 @@ StateMachine::StateMachine(
     uint32_t threadStackSize_B,
     void (*threadFnAdapter)(void *, void *, void *),
     StateMachineController * smc,
-    const char * name) :
+    const char * name,
+    uint8_t maxNumTimers) :
         m_smc(smc),
         m_name(name),
         m_numStates(0),
@@ -25,7 +26,8 @@ StateMachine::StateMachine(
         states(nullptr),
         m_currentState(nullptr), // Start off with no current state
         m_nextState(nullptr),
-        timer(nullptr)
+        m_numTimers(0),
+        m_maxNumTimers(maxNumTimers)
 {
     LOG_DBG("Creating state machine...");
     this->states = static_cast<State**>(k_malloc(this->m_maxNumStates * sizeof(State*)));
@@ -49,10 +51,14 @@ StateMachine::StateMachine(
     // Register this state machine with the SMC
     m_smc->registerStateMachine(this);
 
+    // Create array to hold timers
+    this->m_numTimers = 0;
+    this->timers = static_cast<Timer**>(k_malloc(maxNumTimers * sizeof(Timer*)));
+
     LOG_DBG("StateMachine created.");
 }
 
-void StateMachine::initialTransition(State * state) {
+void StateMachine::setInitialTransition(State * state) {
     this->m_nextState = state;
 }
 
@@ -96,19 +102,33 @@ void StateMachine::threadFn()  {
 
         // k_msleep(1000);
 
-        // Calculate time to wait for next timeout event
-        k_timeout_t timeToWait = K_FOREVER;
-        if (this->timer != nullptr && this->timer->isRunning()) {
-            int64_t timeToWait_ticks = this->timer->timeToNextFire_ticks - k_uptime_ticks();
-            if (timeToWait_ticks < 0) {
-                timeToWait = K_NO_WAIT;
-                LOG_DBG("Timer already expired.");
-            } else {
-                timeToWait = K_TICKS(timeToWait_ticks);
-                LOG_DBG("Time to wait in ticks: %lld.", timeToWait_ticks);
+        // Iterate through all registered timers, and find the one that is expiring next (if any)
+        Timer * timerThatIsExpiringNext = nullptr;
+        for(int i = 0; i < this->m_numTimers; i++) {
+            Timer * timer = this->timers[i];
+            if (timer->isRunning()) {
+                if (timerThatIsExpiringNext == nullptr || timer->nextExpiryTime_ticks < timerThatIsExpiringNext->nextExpiryTime_ticks) {
+                    timerThatIsExpiringNext = timer;
+                }
             }
-        } else {
-            LOG_DBG("%s: No timer set, waiting forever for message.", this->m_name);
+        }
+
+        // Convert the expiry time to a duration from now
+        // Calculate time to wait for next timeout event
+        k_timeout_t durationToWait = K_FOREVER;
+        int64_t uptime_ticks = k_uptime_ticks();
+        if (timerThatIsExpiringNext != nullptr) {
+            if (timerThatIsExpiringNext->nextExpiryTime_ticks <= uptime_ticks) {
+                durationToWait = K_NO_WAIT;
+                LOG_WRN("Timer already expired.");
+            } else {
+                durationToWait = K_TICKS(timerThatIsExpiringNext->nextExpiryTime_ticks - uptime_ticks);
+                LOG_DBG("Time to wait in ticks: %lld.", timerThatIsExpiringNext->nextExpiryTime_ticks - uptime_ticks);
+            }
+        }
+        else
+        {
+            LOG_DBG("No timers running.");
         }
 
         // Just about to block on message queue, so unlock SM mutex
@@ -117,9 +137,8 @@ void StateMachine::threadFn()  {
         // Block on message queue, providing the correct timeout so that if
         // an event is not received, we handle the next timer timeout at the correct
         // time.
-        // TODO: Change hardcoded 10 to constant
         char data[MAX_MSG_SIZE_BYTES];
-        int queueRc = k_msgq_get(&msgQueue, &data, timeToWait);
+        int queueRc = k_msgq_get(&msgQueue, &data, durationToWait);
 
         // Lock SM mutex until we get to the top of the loop again
         k_mutex_lock(&mutex, K_FOREVER);
@@ -135,9 +154,12 @@ void StateMachine::threadFn()  {
             processEvent(event);
         } else {
             LOG_DBG("%s: SM timer expired.", this->m_name);
-            processEvent(&this->timer->event);
+            // This should never be nullptr, as we should have set it to a valid timer before blocking
+            // on the message queue
+            __ASSERT_NO_MSG(timerThatIsExpiringNext != nullptr);
+            processEvent(&timerThatIsExpiringNext->event);
             // Update timer
-            this->timer->incrementNextFireTime();
+            timerThatIsExpiringNext->incrementNextFireTime();
         }
         if (m_terminateThread) {
             // This will return from the thread function, which terminates it.

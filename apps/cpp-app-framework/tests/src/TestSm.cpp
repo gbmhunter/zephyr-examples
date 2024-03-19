@@ -46,10 +46,10 @@ TestSm::TestSm(
     addState(&state2);
     addState(&state2A);
     addState(&root2);
-    addTimer(&timer);
+    registerTimer(&timer);
 
     // Setup initial transition
-    initialTransition(&state1);
+    setInitialTransition(&state1);
 }
 
 void TestSm::fireTestEvent1() {
