@@ -18,7 +18,10 @@ SecondSm::SecondSm(z_thread_stack_element * threadStack,
             std::bind(&SecondSm::Root_Exit, this),
             nullptr, "Root")
 {
-    LOG_INF("Master SM created.");
+    LOG_INF("SecondSM created.");
+
+    helloEventId = app->getSmc()->registerEvent();
+    LOG_DBG("Got helloEventId: %d", helloEventId);
 
     initialTransition(&root);
 }
@@ -31,7 +34,7 @@ void SecondSm::Root_Entry() {
     LOG_INF("Root_Entry");
 
     // Start LED flashing
-    app->getLed()->blink(5, 100, 100);
+    app->getLedSm()->blink(5, 100, 100);
 }
 
 void SecondSm::Root_Event(Event* event) {

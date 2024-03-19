@@ -47,7 +47,7 @@ App::App()
                 SECOND_THREAD_STACK_SIZE_B,
                 &secondThreadFnAdapter,
                 this),
-    m_led(ledThreadStack,
+    m_ledSm(ledThreadStack,
             LED_THREAD_STACK_SIZE_B,
             &ledThreadFnAdapter,
             &m_smc,
@@ -56,7 +56,10 @@ App::App()
 
     l_masterSm = &m_masterSm;
     l_secondSm = &m_secondSm;
-    l_led = &m_led;
+    l_led = &m_ledSm;
+
+    // Register the events
+    
     LOG_INF("App created.");
 }
 

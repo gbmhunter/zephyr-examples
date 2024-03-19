@@ -8,14 +8,25 @@ class Event;
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-
-
 #include "StateMachineController.h"
 
 const uint8_t MAX_NUM_NESTED_STATES = 10;
 
 const uint8_t MAX_MSG_SIZE_BYTES = 20;
 const uint8_t MSG_QUEUE_SIZE = 10;
+
+class TypeID
+{
+    static size_t counter;
+
+public:
+    template<typename T>
+    static size_t value()
+    {
+        static size_t id = counter++;
+        return id;
+    }
+};
 
 enum class EventId {
     TERMINATE_THREAD,
@@ -25,11 +36,9 @@ enum class EventId {
 class Event {
 public:
     uint8_t id;
-    // uint8_t data[10];
 
     Event() {
         this->id = 0;
-        // memset(this->data, 0, 10);
     }
 
     Event(uint8_t id) {

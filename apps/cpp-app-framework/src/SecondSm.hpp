@@ -4,8 +4,18 @@
 
 #include "App.hpp"
 
+class PrintHelloEvent : public Event {
+public:
+    uint8_t someData;
+    PrintHelloEvent() : Event(TypeID::value<PrintHelloEvent>())
+    {
+        someData = 0;
+    }
+};
+
 class SecondSm : public StateMachine {
 public:
+    uint8_t helloEventId;
     SecondSm(
         z_thread_stack_element * threadStack,
         uint32_t threadStackSize_B,

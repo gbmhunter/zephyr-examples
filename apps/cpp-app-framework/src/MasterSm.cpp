@@ -2,6 +2,7 @@
 
 #include "App.hpp"
 #include "MasterSm.hpp"
+#include "SecondSm.hpp"
 
 LOG_MODULE_REGISTER(MasterSm, LOG_LEVEL_DBG);
 
@@ -31,7 +32,15 @@ void MasterSm::Root_Entry() {
     LOG_INF("Root_Entry");
 
     // Start LED flashing
-    app->getLed()->blink(5, 100, 100);
+    app->getLedSm()->blink(5, 100, 100);
+
+    // Send event to second SM
+    // app->eventInfo->printHelloEvent->id
+
+    PrintHelloEvent event;
+    LOG_DBG("event.id: %d", event.id);
+    event.someData = 0;
+    app->getSecondSm()->sendEvent2(&event, sizeof(event));
 }
 
 void MasterSm::Root_Event(Event* event) {

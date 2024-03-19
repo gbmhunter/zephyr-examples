@@ -15,6 +15,14 @@ enum class LedEventId {
     MAX_VALUE,
 };
 
+class OnEvent : public Event {
+public:
+    OnEvent() : Event()
+    {
+    }
+};
+
+
 #pragma pack(push, 1)
 class BlinkEvent : public Event {
 public:
@@ -25,7 +33,7 @@ public:
 
     BlinkEvent(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
         :
-        Event((uint8_t)LedEventId::BLINK), 
+        Event((uint8_t)LedEventId::BLINK),
         numTimes(numTimes),
         onTime_ms(onTime_ms),
         offTime_ms(offTime_ms)

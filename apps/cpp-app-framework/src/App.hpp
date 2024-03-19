@@ -10,18 +10,20 @@ class App;
 
 class App
 {
-    public:
+public:
     App();
     void run();
 
     StateMachineController * getSmc() { return &m_smc; }
 
-    Led * getLed() { return &m_led; }
+    MasterSm * getMasterSm() { return &m_masterSm; }
+    SecondSm * getSecondSm() { return &m_secondSm; }
+    Led * getLedSm() { return &m_ledSm; }
 
-    private:
+private:
     StateMachineController m_smc;
 
     MasterSm m_masterSm;
     SecondSm m_secondSm;
-    Led m_led;
+    Led m_ledSm;
 };
