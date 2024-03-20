@@ -2,8 +2,7 @@
 
 class App;
 
-#include "StateMachineLibrary/StateMachineController.h"
-
+#include "StateMachineLibrary/StateMachineController.hpp"
 #include "LedSm.hpp"
 #include "MasterSm.hpp"
 #include "SecondSm.hpp"

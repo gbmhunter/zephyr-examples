@@ -2,7 +2,7 @@
 
 class StateMachineController;
 
-#include "StateMachine.h"
+#include "StateMachine.hpp"
 
 const uint8_t MAX_NUM_STATE_MACHINES = 20;
 

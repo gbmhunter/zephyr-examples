@@ -14,18 +14,11 @@ class Event;
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "Constants.hpp"
 #include "Event.hpp"
 #include "State.hpp"
-#include "StateMachineController.h"
+#include "StateMachineController.hpp"
 #include "Timer.hpp"
-
-//================================================================================================//
-// CONSTANTS
-//================================================================================================//
-
-const uint8_t MAX_NUM_NESTED_STATES = 10;
-const uint8_t MAX_MSG_SIZE_BYTES = 20;
-const uint8_t MSG_QUEUE_SIZE = 10;
 
 //================================================================================================//
 // EVENTS
@@ -97,11 +90,18 @@ public:
     //! @return Pointer to the current state.
     State * currentState();
 
-    void sendEvent(Event &event)  {
-        k_msgq_put(&msgQueue, &event, K_NO_WAIT);
-    }
-
-    void sendEvent2(void * event, uint8_t size);
+    /**
+     * @brief Send an event to the state machine.
+     * 
+     * The event is copied into the state machine's message queue, so the caller can
+     * safely deallocate the event after this function returns.
+     * 
+     * THREAD-SAFE.
+     * 
+     * @param event Pointer to the event to send.
+     * @param size Size of the event in bytes.
+    */
+    void sendEvent(void * event, uint8_t size);
 
     void queueTransition(State * state)  {
         // Save state to transition to

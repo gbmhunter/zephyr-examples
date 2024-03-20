@@ -1,6 +1,6 @@
 #include <zephyr/logging/log.h>
 
-#include "StateMachineController.h"
+#include "StateMachineController.hpp"
 
 LOG_MODULE_REGISTER(StateMachineController, LOG_LEVEL_INF);
 

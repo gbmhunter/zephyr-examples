@@ -13,7 +13,19 @@ LOG_MODULE_REGISTER(MasterSm, LOG_LEVEL_DBG);
 #pragma pack(push, 1)
 class Timer1ExpiryEvent : public Event {
 public:
-    Timer1ExpiryEvent() : Event(TypeID::value<Timer1ExpiryEvent>(), "MasterSm::Timer1ExpiryEvent")
+    Timer1ExpiryEvent() 
+        :
+        Event(TypeID::value<Timer1ExpiryEvent>(), "MasterSm::Timer1ExpiryEvent")
+    {
+        // nothing to do
+    }
+};
+
+class Timer2ExpiryEvent : public Event {
+public:
+    Timer2ExpiryEvent() 
+        :
+        Event(TypeID::value<Timer2ExpiryEvent>(), "MasterSm::Timer2ExpiryEvent")
     {
         // nothing to do
     }
@@ -35,7 +47,17 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
             std::bind(&MasterSm::Root_Entry, this),
             std::bind(&MasterSm::Root_Event, this, std::placeholders::_1),
             std::bind(&MasterSm::Root_Exit, this),
-            nullptr, "Root")
+            nullptr, "Root"),
+        childStateA(
+            std::bind(&MasterSm::ChildStateA_Entry, this),
+            std::bind(&MasterSm::ChildStateA_Event, this, std::placeholders::_1),
+            std::bind(&MasterSm::ChildStateA_Exit, this),
+            &root, "ChildStateA"),
+        childStateB(
+            std::bind(&MasterSm::ChildStateB_Entry, this),
+            std::bind(&MasterSm::ChildStateB_Event, this, std::placeholders::_1),
+            std::bind(&MasterSm::ChildStateB_Exit, this),
+            &root, "ChildStateB")
 {
     LOG_INF("Master SM created.");
 
@@ -53,21 +75,14 @@ MasterSm::MasterSm(z_thread_stack_element * threadStack,
 void MasterSm::Root_Entry() {
     LOG_INF("Root_Entry");
 
-    // Turn LED on
-    // OnEvent onEvent;
-    // app->getLedSm()->sendEvent2(&onEvent, sizeof(onEvent));
-
-    // Send event to second SM
-    // app->eventInfo->printHelloEvent->id
-
-    // PrintHelloEvent event;
-    // LOG_DBG("event.id: %d", event.id);
-    // event.someData = 0;
-    // app->getSecondSm()->sendEvent2(&event, sizeof(event));
-
-    // Setup some timers
+    // Start 2 timers
     Timer1ExpiryEvent timer1ExpiryEvent;
-    timer1.start(1*1000, -1, timer1ExpiryEvent);
+    timer1.start(3*1000, -1, &timer1ExpiryEvent, sizeof(timer1ExpiryEvent));
+
+    Timer2ExpiryEvent timer2ExpiryEvent;
+    timer2.start(6*1000, -1, &timer2ExpiryEvent, sizeof(timer2ExpiryEvent));
+
+
 }
 
 void MasterSm::Root_Event(Event* event) {
@@ -75,9 +90,45 @@ void MasterSm::Root_Event(Event* event) {
 
     if (event->id == (uint8_t)TypeID::value<Timer1ExpiryEvent>()) {
         LOG_INF("timer1 expired.");
+        queueTransition(&childStateA);
+    } else if (event->id == (uint8_t)TypeID::value<Timer2ExpiryEvent>()) {
+        LOG_INF("timer2 expired.");
+        queueTransition(&childStateB);
     }
 }
 
 void MasterSm::Root_Exit() {
     LOG_INF("Root_Exit");
+}
+
+//============================================================
+// STATE: Root/ChildStateA
+//============================================================
+
+void MasterSm::ChildStateA_Entry() {
+    LOG_INF("%s called.", __PRETTY_FUNCTION__);
+}
+
+void MasterSm::ChildStateA_Event(Event* event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+}
+
+void MasterSm::ChildStateA_Exit() {
+    LOG_INF("%s called.", __PRETTY_FUNCTION__);
+}
+
+//============================================================
+// STATE: Root/ChildStateB
+//============================================================
+
+void MasterSm::ChildStateB_Entry() {
+    LOG_INF("%s called.", __PRETTY_FUNCTION__);
+}
+
+void MasterSm::ChildStateB_Event(Event* event) {
+    LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
+}
+
+void MasterSm::ChildStateB_Exit() {
+    LOG_INF("%s called.", __PRETTY_FUNCTION__);
 }

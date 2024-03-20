@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StateMachineLibrary/StateMachine.h"
+#include "StateMachineLibrary/StateMachine.hpp"
 
 #include "App.hpp"
 

@@ -5,7 +5,7 @@
 
 #include <zephyr/kernel.h>
 
-#include "StateMachineLibrary/StateMachine.h"
+#include "StateMachineLibrary/StateMachine.hpp"
 
 //================================================================================================//
 // EVENTS

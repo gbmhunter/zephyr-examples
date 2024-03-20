@@ -1,9 +1,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
-#include "StateMachine.h"
+#include "StateMachine.hpp"
 
-LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_WRN);
 
 size_t TypeID::counter = 0;
 
@@ -69,7 +69,7 @@ void StateMachine::start() {
 
 void StateMachine::terminateThread() {
     auto event = TerminateThreadEvent();
-    sendEvent(event);
+    sendEvent(&event, sizeof(event));
 }
 
 void StateMachine::join() {
@@ -143,9 +143,10 @@ void StateMachine::threadFn()  {
         // Lock SM mutex until we get to the top of the loop again
         k_mutex_lock(&mutex, K_FOREVER);
 
-        Event * event = reinterpret_cast<Event*>(&data);
-
+        
         if (queueRc == 0) {
+            // Convert back from the raw bytes to an Event type 
+            Event * event = reinterpret_cast<Event*>(&data);
             LOG_DBG("%s: SM received event with id: %u, name: %s.", m_name, event->id, event->m_name);
             if (event->id == TypeID::value<TerminateThreadEvent>()) {
                 LOG_DBG("%s: Terminate thread event received. Returning from the thread function...", m_name);
@@ -157,7 +158,7 @@ void StateMachine::threadFn()  {
             // This should never be nullptr, as we should have set it to a valid timer before blocking
             // on the message queue
             __ASSERT_NO_MSG(timerThatIsExpiringNext != nullptr);
-            processEvent(&timerThatIsExpiringNext->event);
+            processEvent(timerThatIsExpiringNext->getEvent());
             // Update timer. This will either stop the timer if it is a one-shot, or update the next expiry time
             timerThatIsExpiringNext->updateAfterExpiry();
         }
@@ -181,7 +182,7 @@ State * StateMachine::currentState()
     return currentState;
 }
 
-void StateMachine::sendEvent2(void * event, uint8_t size)  {
+void StateMachine::sendEvent(void * event, uint8_t size)  {
     // Make sure event is not bigger than message size
     // static_assert(sizeof(T) <= MSG_SIZE_BYTES, "Event size is too big for message queue");
     __ASSERT(size <= MAX_MSG_SIZE_BYTES, "Event size of %u is bigger than the max. event size of %u.", size, MAX_MSG_SIZE_BYTES);

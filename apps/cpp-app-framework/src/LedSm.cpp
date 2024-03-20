@@ -45,7 +45,7 @@ void LedSm::turnOn() {
 
     // Send event to state machine
     auto event = OnEvent();
-    sendEvent2(&event, sizeof(event));
+    sendEvent(&event, sizeof(event));
 }
 
 void LedSm::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
@@ -54,7 +54,7 @@ void LedSm::blink(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
     BlinkEvent event(numTimes, onTime_ms, offTime_ms);
 
     // Send event to state machine
-    sendEvent2(&event, sizeof(event));
+    sendEvent(&event, sizeof(event));
 }
 
 //============================================================
@@ -116,7 +116,7 @@ void LedSm::On_Entry() {
 
     // Start timer
     TimerExpiryEvent event;
-    timer.start(k_ms_to_ticks_floor64(5*1000), event);
+    timer.start(k_ms_to_ticks_floor64(5*1000), &event, sizeof(event));
 }
 
 void LedSm::On_Event(Event * event) {

@@ -5,10 +5,11 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/zbus/zbus.h>
 
+#include "StateMachineLibrary/StateMachineController.hpp"
+
 #include "App.hpp"
 #include "MasterSm.hpp"
 
-#include "StateMachineLibrary/StateMachineController.h"
 
 LOG_MODULE_REGISTER(App, LOG_LEVEL_DBG);
 
