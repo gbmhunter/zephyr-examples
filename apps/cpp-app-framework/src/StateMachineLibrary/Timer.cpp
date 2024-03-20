@@ -34,3 +34,20 @@ void Timer::start(int64_t startDuration_ms, int64_t period_ms, Event event)
     this->event = event;
     this->m_isRunning = true;
 }
+
+bool Timer::isRunning() {
+    return this->m_isRunning;
+}
+
+void Timer::updateAfterExpiry() {
+    if (this->period_ticks == -1)
+    {
+        // Timer was one-shot, so stop it
+        this->m_isRunning = false;
+    }
+    else
+    {
+        // Update expiry time based on the period
+        this->nextExpiryTime_ticks += this->period_ticks;
+    }
+}
