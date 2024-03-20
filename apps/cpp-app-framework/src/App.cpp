@@ -69,6 +69,8 @@ void App::run(void)
     LOG_DBG("Starting all state machines...");
     m_smc.startAll();
 
+    auto timeout = K_MSEC(1000);
+
     k_msleep(100*1000);
     // led.turnOn();
 

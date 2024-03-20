@@ -158,8 +158,8 @@ void StateMachine::threadFn()  {
             // on the message queue
             __ASSERT_NO_MSG(timerThatIsExpiringNext != nullptr);
             processEvent(&timerThatIsExpiringNext->event);
-            // Update timer
-            timerThatIsExpiringNext->incrementNextFireTime();
+            // Update timer. This will either stop the timer if it is a one-shot, or update the next expiry time
+            timerThatIsExpiringNext->updateAfterExpiry();
         }
         if (m_terminateThread) {
             // This will return from the thread function, which terminates it.
