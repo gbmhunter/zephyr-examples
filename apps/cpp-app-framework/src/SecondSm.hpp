@@ -7,7 +7,7 @@
 class PrintHelloEvent : public Event {
 public:
     uint8_t someData;
-    PrintHelloEvent() : Event(TypeID::value<PrintHelloEvent>(), "SecondSm::PrintHelloEvent")
+    PrintHelloEvent() : Event(EventId::value<PrintHelloEvent>(), "SecondSm::PrintHelloEvent")
     {
         someData = 0;
     }

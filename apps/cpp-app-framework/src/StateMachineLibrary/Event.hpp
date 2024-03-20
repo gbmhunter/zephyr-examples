@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-class TypeID
+class EventId
 {
     static size_t counter;
 

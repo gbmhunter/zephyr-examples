@@ -1,6 +1,6 @@
 #include <zephyr/ztest.h>
 
-#include "StateMachine.h"
+#include "StateMachineLibrary/StateMachine.hpp"
 
 #include "TestSm.h"
 
@@ -15,11 +15,6 @@ void smThreadFnAdapter(void *, void *, void *)
 {
     l_testSm->threadFn();
 }
-
-enum class TestEventId
-{
-    TEST = (uint8_t)EventId::MAX_VALUE,
-};
 
 void checkCallstack(
     TestSm * sm,
@@ -60,9 +55,10 @@ void checkCurrentState(TestSm * sm, const char * expectedStateName)
 
 ZTEST(framework_tests, make_sure_transitions_works)
 {
+    StateMachineController smc;
     
     // Create test SM
-    auto testSm = TestSm(smThreadStack, smThreadFnAdapter);
+    auto testSm = TestSm(smThreadStack, smThreadFnAdapter, &smc);
     l_testSm = &testSm;
 
     testSm.start();
@@ -81,7 +77,8 @@ ZTEST(framework_tests, make_sure_transitions_works)
     checkCallstack(&testSm, expectedCallStack);
 
     // Fire event which will cause transition from state 1 to state 2
-    testSm.fireTestEvent1();
+    TestEvent1 testEvent1;
+    testSm.sendEvent(&testEvent1, sizeof(testEvent1));
 
     // Give the state machine time to run
     k_msleep(1000);
@@ -99,7 +96,8 @@ ZTEST(framework_tests, make_sure_transitions_works)
 
     // Fire event which is not handled by any states, we should see
     // the state 2 and root state event handlers called
-    testSm.fireRootEvent();
+    RootEvent rootEvent;
+    testSm.sendEvent(&rootEvent, sizeof(rootEvent));
 
     // Give the state machine time to run
     k_msleep(1000);
@@ -115,7 +113,8 @@ ZTEST(framework_tests, make_sure_transitions_works)
     checkCallstack(&testSm, expectedCallStack);
 
     // Goto state 2A
-    testSm.gotoState2A();
+    GotoState2AEvent gotoState2AEvent;
+    testSm.sendEvent(&gotoState2AEvent, sizeof(gotoState2AEvent));
 
     // Give the state machine time to run
     k_msleep(1000);
@@ -132,7 +131,7 @@ ZTEST(framework_tests, make_sure_transitions_works)
     checkCallstack(&testSm, expectedCallStack);
 
     // Tell SM to goto state 2A again. Since we are already there, no transitions should occur
-    testSm.gotoState2A();
+    testSm.sendEvent(&gotoState2AEvent, sizeof(gotoState2AEvent));
 
     // Give the state machine time to run
     k_msleep(1000);
@@ -149,7 +148,8 @@ ZTEST(framework_tests, make_sure_transitions_works)
     checkCallstack(&testSm, expectedCallStack);
 
     // Go to state root2, which is not connected to any other states
-    testSm.gotoStateRoot2();
+    GotoStateRoot2Event gotoStateRoot2Event;
+    testSm.sendEvent(&gotoStateRoot2Event, sizeof(gotoStateRoot2Event));
 
     // Give the state machine time to run
     k_msleep(1000);

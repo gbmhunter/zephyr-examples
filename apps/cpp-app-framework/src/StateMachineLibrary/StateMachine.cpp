@@ -5,7 +5,7 @@
 
 LOG_MODULE_REGISTER(StateMachine, LOG_LEVEL_WRN);
 
-size_t TypeID::counter = 0;
+size_t EventId::counter = 0;
 
 //===========================================================================//
 // PUBLIC METHOD DEFINITIONS
@@ -148,7 +148,7 @@ void StateMachine::threadFn()  {
             // Convert back from the raw bytes to an Event type 
             Event * event = reinterpret_cast<Event*>(&data);
             LOG_DBG("%s: SM received event with id: %u, name: %s.", m_name, event->id, event->m_name);
-            if (event->id == TypeID::value<TerminateThreadEvent>()) {
+            if (event->id == EventId::value<TerminateThreadEvent>()) {
                 LOG_DBG("%s: Terminate thread event received. Returning from the thread function...", m_name);
                 return;
             }

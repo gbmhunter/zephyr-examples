@@ -10,8 +10,9 @@ const uint8_t MAX_NUM_STATES = 10;
 
 TestSm::TestSm(
     z_thread_stack_element * threadStack,
-    void (*threadFnAdapter)(void *, void *, void *)) :
-        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter),
+    void (*threadFnAdapter)(void *, void *, void *),
+    StateMachineController * smc) :
+        StateMachine(MAX_NUM_STATES, threadStack, 1024, threadFnAdapter, smc, "TestSm"),
         root(
             std::bind(&TestSm::Root_Entry, this),
             std::bind(&TestSm::Root_Event, this, std::placeholders::_1),
@@ -52,33 +53,6 @@ TestSm::TestSm(
     setInitialTransition(&state1);
 }
 
-void TestSm::fireTestEvent1() {
-    // Send event to state machine
-    auto event = Event((uint8_t)TestSmEventId::TEST_EVENT_1);
-    sendEvent2(&event, sizeof(event));
-}
-
-void TestSm::fireRootEvent()
-{
-    // sendEvent(Event((uint8_t)TestSmEventId::ROOT_EVENT, nullptr));
-    auto event = Event((uint8_t)TestSmEventId::ROOT_EVENT);
-    sendEvent2(&event, sizeof(event));
-}
-
-void TestSm::gotoState2A()
-{
-    // sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_2A, nullptr));
-    auto event = Event((uint8_t)TestSmEventId::GOTO_STATE_2A);
-    sendEvent2(&event, sizeof(event));
-}
-
-void TestSm::gotoStateRoot2()
-{
-    // sendEvent(Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2, nullptr));
-    auto event = Event((uint8_t)TestSmEventId::GOTO_STATE_ROOT2);
-    sendEvent2(&event, sizeof(event));
-}
-
 void TestSm::addToCallstack(const char * functionName) {
     callstack[callstackIdx++] = functionName;
 }
@@ -110,12 +84,12 @@ void TestSm::Root_Event(Event * event) {
     addToCallstack("Root_Event");
 
     // Listen for GOTO_STATE_2A event
-    if (event->id == (uint8_t)TestSmEventId::GOTO_STATE_2A) {
+    if (event->id == (uint8_t)EventId::value<GotoState2AEvent>()) {
         queueTransition(&state2A);
     }
 
     // Listen for GOTO_STATE_ROOT2 event
-    if (event->id == (uint8_t)TestSmEventId::GOTO_STATE_ROOT2) {
+    if (event->id == (uint8_t)EventId::value<GotoStateRoot2Event>()) {
         queueTransition(&root2);
     }
 }
@@ -137,7 +111,7 @@ void TestSm::State1_Entry() {
 void TestSm::State1_Event(Event * event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("State1_Event");
-    if (event->id == (uint8_t)TestSmEventId::TEST_EVENT_1) {
+    if (event->id == (uint8_t)EventId::value<TestEvent1>()) {
         queueTransition(&state2);
     }
 }

@@ -14,7 +14,7 @@
 #pragma pack(push, 1)
 class OnEvent : public Event {
 public:
-    OnEvent() : Event(TypeID::value<OnEvent>(), "LedSm::OnEvent")
+    OnEvent() : Event(EventId::value<OnEvent>(), "LedSm::OnEvent")
     {
         // nothing to do
     }
@@ -28,7 +28,7 @@ public:
 
     BlinkEvent(uint8_t numTimes, uint32_t onTime_ms, uint32_t offTime_ms)
         :
-        Event(TypeID::value<BlinkEvent>(), "LedSm::BlinkEvent"),
+        Event(EventId::value<BlinkEvent>(), "LedSm::BlinkEvent"),
         numTimes(numTimes),
         onTime_ms(onTime_ms),
         offTime_ms(offTime_ms)
@@ -38,7 +38,7 @@ public:
 
 class TimerExpiryEvent : public Event {
 public:
-    TimerExpiryEvent() : Event(TypeID::value<TimerExpiryEvent>(), "LedSm::TimerExpiryEvent")
+    TimerExpiryEvent() : Event(EventId::value<TimerExpiryEvent>(), "LedSm::TimerExpiryEvent")
     {
         // nothing to do
     }

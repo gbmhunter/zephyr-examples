@@ -68,7 +68,7 @@ void LedSm::Root_Entry() {
 void LedSm::Root_Event(Event* event) {
     LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
 
-    if (event->id == (uint8_t)TypeID::value<BlinkEvent>()) {
+    if (event->id == (uint8_t)EventId::value<BlinkEvent>()) {
         // Got blink event. Reinterp cast to BlinkEvent
         auto blinkEvent = reinterpret_cast<BlinkEvent*>(event);
 
@@ -95,7 +95,7 @@ void LedSm::Off_Entry() {
 void LedSm::Off_Event(Event* event) {
     LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
 
-    if (event->id == (uint8_t)TypeID::value<OnEvent>()) {
+    if (event->id == (uint8_t)EventId::value<OnEvent>()) {
         // Transition to On state
         queueTransition(&on);
         return;
@@ -121,7 +121,7 @@ void LedSm::On_Entry() {
 
 void LedSm::On_Event(Event * event) {
     LOG_DBG("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
-    if (event->id == (uint8_t)TypeID::value<TimerExpiryEvent>()) {
+    if (event->id == (uint8_t)EventId::value<TimerExpiryEvent>()) {
         // Timer expired
         LOG_DBG("Timer expired.");
         queueTransition(&off);

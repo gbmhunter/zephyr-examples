@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Include all source files in the main application
 # except main.c, which we will filter out
-FILE(GLOB appSources ../src/*.cpp)
+FILE(GLOB appSources ../src/**/*.cpp)
 list(FILTER appSources EXCLUDE REGEX ".*main\\.cpp$")
 
 # Include all source files in the test application

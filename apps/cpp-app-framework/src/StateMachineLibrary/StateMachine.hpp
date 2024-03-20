@@ -28,7 +28,7 @@ class TerminateThreadEvent : public Event {
 public:
     TerminateThreadEvent() 
         :
-        Event(TypeID::value<TerminateThreadEvent>(), "StateMachine::TerminateThreadEvent")
+        Event(EventId::value<TerminateThreadEvent>(), "StateMachine::TerminateThreadEvent")
     {
         // nothing to do
     }

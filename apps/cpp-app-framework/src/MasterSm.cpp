@@ -15,7 +15,7 @@ class Timer1ExpiryEvent : public Event {
 public:
     Timer1ExpiryEvent() 
         :
-        Event(TypeID::value<Timer1ExpiryEvent>(), "MasterSm::Timer1ExpiryEvent")
+        Event(EventId::value<Timer1ExpiryEvent>(), "MasterSm::Timer1ExpiryEvent")
     {
         // nothing to do
     }
@@ -25,7 +25,7 @@ class Timer2ExpiryEvent : public Event {
 public:
     Timer2ExpiryEvent() 
         :
-        Event(TypeID::value<Timer2ExpiryEvent>(), "MasterSm::Timer2ExpiryEvent")
+        Event(EventId::value<Timer2ExpiryEvent>(), "MasterSm::Timer2ExpiryEvent")
     {
         // nothing to do
     }
@@ -81,17 +81,15 @@ void MasterSm::Root_Entry() {
 
     Timer2ExpiryEvent timer2ExpiryEvent;
     timer2.start(6*1000, -1, &timer2ExpiryEvent, sizeof(timer2ExpiryEvent));
-
-
 }
 
 void MasterSm::Root_Event(Event* event) {
     LOG_INF("Root_Event");
 
-    if (event->id == (uint8_t)TypeID::value<Timer1ExpiryEvent>()) {
+    if (event->id == (uint8_t)EventId::value<Timer1ExpiryEvent>()) {
         LOG_INF("timer1 expired.");
         queueTransition(&childStateA);
-    } else if (event->id == (uint8_t)TypeID::value<Timer2ExpiryEvent>()) {
+    } else if (event->id == (uint8_t)EventId::value<Timer2ExpiryEvent>()) {
         LOG_INF("timer2 expired.");
         queueTransition(&childStateB);
     }

@@ -5,22 +5,44 @@
 
 #include <zephyr/kernel.h>
 
-#include "StateMachine.h"
+#include "StateMachineLibrary/StateMachine.hpp"
 
 const uint8_t CALL_STACK_DEPTH = 10;
 
-enum class TestSmEventId {
-    TEST_EVENT_1 = (uint8_t)EventId::MAX_VALUE,
-    ROOT_EVENT,
-    GOTO_STATE_2A,
-    GOTO_STATE_ROOT2,
+//================================================================================================//
+// PUBLIC EVENTS
+//================================================================================================//
+
+class TestEvent1 : public Event {
+    public:
+        TestEvent1() : Event((uint8_t)EventId::value<TestEvent1>(), "TestSm::TestEvent1") {}
 };
+
+class RootEvent : public Event {
+    public:
+        RootEvent() : Event((uint8_t)EventId::value<RootEvent>(), "TestSm::RootEvent") {}
+};
+
+class GotoState2AEvent : public Event {
+    public:
+        GotoState2AEvent() : Event((uint8_t)EventId::value<GotoState2AEvent>(), "TestSm::GotoState2AEvent") {}
+};
+
+class GotoStateRoot2Event : public Event {
+    public:
+        GotoStateRoot2Event() : Event((uint8_t)EventId::value<GotoStateRoot2Event>(), "TestSm::GotoStateRoot2Event") {}
+};
+
+//================================================================================================//
+// STATE MACHINE PROTOTYPE
+//================================================================================================//
 
 class TestSm : public StateMachine {
     public:
         TestSm(
             z_thread_stack_element * threadStack, 
-            void (*threadFnAdapter)(void *, void *, void *));
+            void (*threadFnAdapter)(void *, void *, void *),
+            StateMachineController * smc);
 
         void turnOn();
 
@@ -29,14 +51,6 @@ class TestSm : public StateMachine {
         void addToCallstack(const char * functionName);
 
         std::array<const char *, CALL_STACK_DEPTH> getCallstackAndClear();
-
-        void fireTestEvent1();
-
-        void fireRootEvent();
-
-        void gotoState2A();
-
-        void gotoStateRoot2();
 
     private:
 
