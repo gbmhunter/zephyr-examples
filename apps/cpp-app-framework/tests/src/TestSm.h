@@ -33,6 +33,11 @@ class GotoStateRoot2Event : public Event {
         GotoStateRoot2Event() : Event((uint8_t)EventId::value<GotoStateRoot2Event>(), "TestSm::GotoStateRoot2Event") {}
 };
 
+class StopPropagationEvent : public Event {
+    public:
+        StopPropagationEvent() : Event((uint8_t)EventId::value<StopPropagationEvent>(), "TestSm::StopPropagationEvent") {}
+};
+
 //================================================================================================//
 // STATE MACHINE PROTOTYPE
 //================================================================================================//

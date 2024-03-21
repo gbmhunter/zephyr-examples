@@ -152,6 +152,9 @@ void TestSm::State2A_Entry() {
 void TestSm::State2A_Event(Event * event) {
     LOG_INF("%s called. event.id: %u.", __PRETTY_FUNCTION__, event->id);
     addToCallstack("State2A_Event");
+    if (event->id == (uint8_t)EventId::value<StopPropagationEvent>()) {
+        stopPropagation();
+    }
 }
 
 void TestSm::State2A_Exit() {

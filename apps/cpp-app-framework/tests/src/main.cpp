@@ -38,7 +38,11 @@ void checkCallstack(
             expectedCallStack[i]);
 
         // If we get here both callstacks are non-null, safe to compare the strings
-        zassert_equal(strcmp(actualCallstack[i], expectedCallStack[i]), 0, "Expected call of %s was not equal to the actual call of %s at index %u.", expectedCallStack[i], actualCallstack[i], i);
+        zassert_equal(strcmp(actualCallstack[i], expectedCallStack[i]),
+                      0,
+                      "Expected call of %s was not equal to the actual call of %s at index %u.", expectedCallStack[i],
+                      actualCallstack[i],
+                      i);
     }
 }
 
@@ -53,6 +57,10 @@ void checkCurrentState(TestSm * sm, const char * expectedStateName)
         expectedStateName);
 }
 
+// The unit tests should really be broken up into individual tests....but
+// I couldn't work out how to destroy the thread stack and re-initialize it
+// without causing a seg fault after about the 6th unit test. So I've just
+// put all the tests in one big test case.
 ZTEST(framework_tests, make_sure_transitions_works)
 {
     StateMachineController smc;
@@ -130,6 +138,10 @@ ZTEST(framework_tests, make_sure_transitions_works)
      };
     checkCallstack(&testSm, expectedCallStack);
 
+    //========================================================================//
+    // NO TRANSITION TO SAME STATE
+    //========================================================================//
+
     // Tell SM to goto state 2A again. Since we are already there, no transitions should occur
     testSm.sendEvent(&gotoState2AEvent, sizeof(gotoState2AEvent));
 
@@ -146,6 +158,30 @@ ZTEST(framework_tests, make_sure_transitions_works)
         "Root_Event",
      };
     checkCallstack(&testSm, expectedCallStack);
+
+    //========================================================================//
+    // TEST STOP PROPAGATION
+    //========================================================================//
+
+    StopPropagationEvent stopPropagationEvent;
+    testSm.sendEvent(&stopPropagationEvent, sizeof(stopPropagationEvent));
+
+    // Give the state machine time to run
+    k_msleep(1000);
+
+    // Make sure we are still in state 2A
+    checkCurrentState(&testSm, "State2A");
+
+    // Check the call stack, should just be 2A because it calls
+    // stopPropagation()
+    expectedCallStack = {
+        "State2A_Event",
+     };
+    checkCallstack(&testSm, expectedCallStack);
+
+    //========================================================================//
+    // SEPARATE ROOT STATE
+    //========================================================================//
 
     // Go to state root2, which is not connected to any other states
     GotoStateRoot2Event gotoStateRoot2Event;
