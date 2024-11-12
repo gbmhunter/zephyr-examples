@@ -1,3 +1,7 @@
 .venv/
 build*/
 twister-out*/
+zephyr/
+modules/
+bootloader/
+tools/

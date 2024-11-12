@@ -1,3 +1,29 @@
+## Install Dependencies
+
+Clone this repository and `cd` into the root directory.
+
+Create a Python virtual environment and install `west`:
+
+```shell
+python3 -m venv .venv
+source .venv/bin/activate
+pip install west
+```
+
+Install additional Python dependencies:
+
+```shell
+pip install -r zephyr/scripts/requirements.txt
+```
+
+Run `west update` to install Zephyr dependencies:
+
+```shell
+west update
+```
+
+## Build and Run
+
 To build a new project for the first time:
 
 ```shell

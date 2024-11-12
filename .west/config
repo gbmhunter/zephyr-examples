@@ -1,4 +1,5 @@
 [manifest]
+#path = apps/state-machine-framework
 path = zephyr
 file = west.yml
 
