@@ -10,6 +10,7 @@ typedef enum {
     S1,
     S1A,
     S1B,
+    S1C,
     S2,
     S3,
 } MainSm_State;
@@ -47,9 +48,25 @@ int main(void) {
     printf("Telling S1A to transition to S1B.\n");
     smf_run_state(SMF_CTX(&obj));
 
+    obj.doTransition = false;
+    obj.handleEvent = false;
+    printf("Sending event to S1B, telling it not to handle it.\n");
+    smf_run_state(SMF_CTX(&obj));
+
+    obj.doTransition = false;
+    obj.handleEvent = true;
+    printf("Sending event to S1B, telling it to handle it.\n");
+    smf_run_state(SMF_CTX(&obj));
+
+
     obj.doTransition = true;
     obj.handleEvent = false;
-    printf("Telling S1B to transition back to S1A.\n");
+    printf("Telling S1B to transition to S1C.\n");
+    smf_run_state(SMF_CTX(&obj));
+
+    obj.doTransition = true;
+    obj.handleEvent = false;
+    printf("Telling S1C to transition back to S1A.\n");
     smf_run_state(SMF_CTX(&obj));
 
     obj.doTransition = false;
@@ -86,6 +103,7 @@ static void s1a_run(void *obj) {
 
     if (smObj->doTransition) {
         smf_set_state(SMF_CTX(smObj), &l_states[S1B]);
+        return;
     }
 
     if (smObj->handleEvent) {
@@ -111,12 +129,40 @@ static void s1b_run(void *obj) {
     SmObj *smObj = (SmObj *)obj;
 
     if (smObj->doTransition) {
-        smf_set_state(SMF_CTX(smObj), &l_states[S1A]);
+        smf_set_handled(SMF_CTX(smObj));
+        smf_set_state(SMF_CTX(smObj), &l_states[S1C]);
+        return;
+    }
+
+    if (smObj->handleEvent) {
+        printf("S1B handling event.\n");
+        smf_set_handled(SMF_CTX(smObj));
+    }
+    else {
+        printf("S1B not handling event.\n");
     }
 }
 
 static void s1b_exit(void *obj) {
     printf("S1B exit.\n");
+}
+
+static void s1c_entry(void *obj) {
+    printf("S1C entry.\n");
+}
+
+static void s1c_run(void *obj) {
+    printf("S1C run.\n");
+    SmObj *smObj = (SmObj *)obj;
+
+    if (smObj->doTransition) {
+        smf_set_state(SMF_CTX(smObj), &l_states[S1A]);
+        smf_set_handled(SMF_CTX(smObj));
+    }
+}
+
+static void s1c_exit(void *obj) {
+    printf("S1C exit.\n");
 }
 
 static void s2_entry(void *obj) {
@@ -147,6 +193,7 @@ static const struct smf_state l_states[] = {
     [S1] = SMF_CREATE_STATE(s1_entry, s1_run, s1_exit, NULL, NULL),
     [S1A] = SMF_CREATE_STATE(s1a_entry, s1a_run, s1a_exit, &l_states[S1], NULL),
     [S1B] = SMF_CREATE_STATE(s1b_entry, s1b_run, s1b_exit, &l_states[S1], NULL),
+    [S1C] = SMF_CREATE_STATE(s1c_entry, s1c_run, s1c_exit, &l_states[S1], NULL),
     [S2] = SMF_CREATE_STATE(s2_entry, s2_run, s2_exit, NULL, NULL),
     [S3] = SMF_CREATE_STATE(s3_entry, s3_run, s3_exit, NULL, NULL),
 };
