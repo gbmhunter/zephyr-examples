@@ -6,4 +6,4 @@ project(my_zephyr_app)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-target_sources(app PRIVATE src/main.cpp)
+target_sources(app PRIVATE src/main.cpp src/EventLoop.cpp)
