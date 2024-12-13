@@ -6,4 +6,15 @@ project(my_zephyr_app)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+Include(FetchContent)
+
+FetchContent_Declare(
+  etl
+  GIT_REPOSITORY https://github.com/ETLCPP/etl
+  GIT_TAG        20.39.4
+)
+
+FetchContent_MakeAvailable(etl)
+
 target_sources(app PRIVATE src/main.cpp src/EventLoop.cpp)
+target_link_libraries(app PRIVATE etl::etl)

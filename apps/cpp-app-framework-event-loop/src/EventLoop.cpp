@@ -64,7 +64,7 @@ void EventLoop::postEvent(EventBase * event, uint8_t size) {
     k_msgq_put(&msgQueue, data, K_NO_WAIT);
 }
 
-void EventLoop::scheduleRun(std::function<void()> fn) {
+void EventLoop::runInLoop(std::function<void()> fn) {
     // Create a run in loop event
     RunInLoopEvent event(fn);
     this->postEvent(&event, sizeof(event));
