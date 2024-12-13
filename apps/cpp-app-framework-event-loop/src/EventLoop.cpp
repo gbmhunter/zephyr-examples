@@ -37,15 +37,15 @@ void EventLoop::run() {
     int rc = k_thread_name_set(k_current_get(), "EventLoop");
     __ASSERT(rc == 0, "Failed to set thread name. rc: %d", rc);
 
-    // Timer timer = this->createTimer([]() {
-    //     LOG_INF("1000ms timer expired!");
-    // });
-    // timer.start(1000);
+    Timer timer([]() {
+        LOG_INF("1000ms timer expired!");
+    });
+    timer.start(1000);
 
-    // Timer timer2 = this->createTimer([]() {
-    //     LOG_INF("2100ms timer expired!");
-    // });
-    // timer2.start(2100);
+    Timer timer2([]() {
+        LOG_INF("2100ms timer expired!");
+    });
+    timer2.start(2100);
 
 
     Led led;
@@ -92,6 +92,8 @@ void EventLoop::run() {
             }
         }
         else {
+            // This must mean that the timer expired!
+            
             // This should never be nullptr, as we should have set it to a valid timer before blocking
             // on the message queue
             __ASSERT_NO_MSG(timerThatIsExpiringNext != nullptr);
