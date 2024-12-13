@@ -5,8 +5,11 @@
 #include "EventLoop.hpp"
 #include "Constants.hpp"
 #include "Timer.hpp"
+#include "Led.hpp"
 
 LOG_MODULE_REGISTER(EventLoop, LOG_LEVEL_DBG);
+
+EventLoop * EventLoop::instance = nullptr;
 
 void threadFnAdapter(void * p1, void * p2, void * p3) {
     EventLoop * eventLoop = static_cast<EventLoop*>(p1);
@@ -34,13 +37,24 @@ void EventLoop::run() {
     int rc = k_thread_name_set(k_current_get(), "EventLoop");
     __ASSERT(rc == 0, "Failed to set thread name. rc: %d", rc);
 
-    Timer timer = this->createTimer([]() {
-        LOG_INF("Timer expired!");
-    }, 1000);
+    // Timer timer = this->createTimer([]() {
+    //     LOG_INF("1000ms timer expired!");
+    // });
+    // timer.start(1000);
+
+    // Timer timer2 = this->createTimer([]() {
+    //     LOG_INF("2100ms timer expired!");
+    // });
+    // timer2.start(2100);
+
+
+    Led led;
+    led.flash(1000);
 
     while (true) {
         // Iterate through all registered timers, and find the one that is expiring next (if any)
         Timer * timerThatIsExpiringNext = nullptr;
+        LOG_DBG("Iterating through timers. numTimers: %d", this->m_numTimers);
         for(uint32_t i = 0; i < this->m_numTimers; i++) {
             Timer * timer = this->m_timers[i];
             if (timer->isRunning()) {
@@ -55,6 +69,7 @@ void EventLoop::run() {
         k_timeout_t durationToWait = K_FOREVER;
         int64_t uptime_ticks = k_uptime_ticks();
         if (timerThatIsExpiringNext != nullptr) {
+            LOG_DBG("Timer that is expiring next has nextExpiryTime_ticks: %" PRId64 ". uptime_ticks: %" PRId64, timerThatIsExpiringNext->nextExpiryTime_ticks, uptime_ticks);
             if (timerThatIsExpiringNext->nextExpiryTime_ticks <= uptime_ticks) {
                 durationToWait = K_NO_WAIT;
                 LOG_WRN("Timer already expired.");
@@ -106,13 +121,8 @@ void EventLoop::runInLoop(std::function<void()> fn) {
     this->postEvent(&event, sizeof(event));
 }
 
-Timer EventLoop::createTimer(std::function<void()> fn, uint32_t ms) {
-    Timer timer;
-    timer.start(fn, ms);
-
+void EventLoop::registerTimer(Timer * timer) {
     // Add to list of timers
-    this->m_timers[this->m_numTimers] = &timer;
+    this->m_timers[this->m_numTimers] = timer;
     this->m_numTimers++;
-
-    return timer;
 }

@@ -14,10 +14,11 @@ K_THREAD_STACK_DEFINE(event_loop_stack, EVENT_LOOP_STACK_SIZE);
 
 int main(void)
 {
-    EventLoop eventLoop(event_loop_stack, EVENT_LOOP_STACK_SIZE);
+    EventLoop::createInstance(event_loop_stack, EVENT_LOOP_STACK_SIZE);
+    EventLoop * eventLoop = EventLoop::getInstance();
 
     // This could be called from an interrupt, to say, process a GPIO changing state
-    eventLoop.runInLoop([]() {
+    eventLoop->runInLoop([]() {
         LOG_INF("Running in event loop! thread: %s\n", k_thread_name_get(k_current_get()));
     });
 

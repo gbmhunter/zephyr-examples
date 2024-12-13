@@ -27,20 +27,13 @@ public:
 
     std::function<void ()> m_expiryFn;
 
-    Timer() :
-        period_ticks(0),
-        startTime_ticks(0),
-        nextExpiryTime_ticks(0),
-        m_isRunning(false)
-    {
-        // nothing to do
-    }
+    Timer(std::function<void ()> expiryFn);
 
     /**
      * Start the timer in reoccurring mode. The timer will expire for the first time
      * after period_ms from when this is called, and then period_ms after that.
     */
-    void start(std::function<void ()> expiryFn, int64_t period_ms);
+    void start(int64_t period_ms);
 
     /**
      * Start the timer in either one-shot or reoccurring mode.
@@ -48,7 +41,7 @@ public:
      * @param startDuration_ms The time to wait before the first expiry. Must either be 0 (no-wait) or positive.
      * @param period_ms The period of the timer. Set to -1 for a one-shot timer, or 0/positive for a recurring timer.
     */
-    void start(std::function<void ()> expiryFn, int64_t startDuration_ms, int64_t period_ms);
+    void start(int64_t startDuration_ms, int64_t period_ms);
 
     /**
      * Check if the timer is running.

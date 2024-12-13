@@ -28,10 +28,24 @@ public:
      * NOT THREAD SAFE. Must be called from the event loop thread.
      * 
      * @param fn The function to call when the timer expires.
-     * @param ms The period of the timer in milliseconds.
      * @return The timer object.
      */
-    Timer createTimer(std::function<void()> fn, uint32_t ms);
+    void registerTimer(Timer * timer);
+
+    /**
+     * Expose a single instance of the event loop.  
+     */
+    static EventLoop * instance;
+
+    static void createInstance(z_thread_stack_element * threadStack, uint32_t threadStackSize_B) {
+        if (instance == nullptr) {
+            instance = new EventLoop(threadStack, threadStackSize_B);
+        }
+    }
+
+    static EventLoop * getInstance() {
+        return instance;
+    }
 
 private:
     struct k_thread thread;
