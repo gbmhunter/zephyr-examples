@@ -4,29 +4,36 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "Timer.hpp"
+#include "Led.hpp"
 #include "EventLoop.hpp"
 
 LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
-#define EVENT_LOOP_STACK_SIZE 1024
-
-K_THREAD_STACK_DEFINE(event_loop_stack, EVENT_LOOP_STACK_SIZE);
-
 int main(void)
 {
-    EventLoop::createInstance(event_loop_stack, EVENT_LOOP_STACK_SIZE);
+    EventLoop::createInstance();
     EventLoop * eventLoop = EventLoop::getInstance();
 
     // This could be called from an interrupt, to say, process a GPIO changing state
-    eventLoop->runInLoop([]() {
-        LOG_INF("Running in event loop! thread: %s\n", k_thread_name_get(k_current_get()));
+    eventLoop->executeInLoop([]() {
+        LOG_INF("Running in event loop!");
     });
 
-    while (true) {
-        k_sleep(K_SECONDS(1));
-    }
+    Timer timer([]() {
+        LOG_INF("1000ms timer expired!");
+    });
+    timer.start(1000);
 
+    Timer timer2([]() {
+        LOG_INF("2100ms timer expired!");
+    });
+    timer2.start(2100);
 
-    LOG_DBG("main() returning...\n");
+    Led led;
+    led.flash(1000);
+
+    // This won't return
+    eventLoop->run();
 }
 

@@ -7,19 +7,13 @@
 
 class Led {
 public:
-    Led() : 
-            m_timer([this]() { this->onTimerExpired(); }) {
-    }
-    void on() {}
-    void off() {}
-    void flash(uint32_t ms) {
-        m_timer.start(ms, ms);
-    }
+    Led();
+    void on();
+    void off();
+    void flash(uint32_t ms);
 
 private:
     Timer m_timer;
 
-    void onTimerExpired() {
-        printf("Timer expired\n");
-    }
+    void onTimerExpired();
 };

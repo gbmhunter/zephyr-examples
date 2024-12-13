@@ -68,8 +68,6 @@ void Timer::updateAfterExpiry() {
 }
 
 void Timer::expiryFn() {
-    LOG_DBG("Function called.");
-    printf("Function called.\n");
     if (this->m_expiryFn) {
         this->m_expiryFn();
     } else {

@@ -10,45 +10,46 @@
 
 class EventLoop {
 public:
-    EventLoop(z_thread_stack_element * threadStack, uint32_t threadStackSize_B);
+    
+    /**
+     * Call to run the event loop. Does not return.
+     */
     void run();
-
-    void postEvent(EventBase * event, uint8_t size);
 
     /**
      * Schedule a function to be run in the event loop.
      * 
      * This can be called from any thread or interrupt.
      */
-    void runInLoop(std::function<void()> fn);
+    void executeInLoop(std::function<void()> fn);
 
     /**
-     * Create a timer.
+     * Register a timer.
      * 
      * NOT THREAD SAFE. Must be called from the event loop thread.
      * 
-     * @param fn The function to call when the timer expires.
-     * @return The timer object.
+     * @param timer The timer to register.
      */
     void registerTimer(Timer * timer);
 
-    /**
-     * Expose a single instance of the event loop.  
-     */
-    static EventLoop * instance;
-
-    static void createInstance(z_thread_stack_element * threadStack, uint32_t threadStackSize_B) {
-        if (instance == nullptr) {
-            instance = new EventLoop(threadStack, threadStackSize_B);
+    static void createInstance() {
+        if (m_instance == nullptr) {
+            m_instance = new EventLoop();
         }
     }
 
     static EventLoop * getInstance() {
-        return instance;
+        return m_instance;
     }
 
 private:
-    struct k_thread thread;
+    /**
+     * Private constructor. Create instance through createInstance() instead.
+     */
+    EventLoop();
+
+    void postEvent(EventBase * event, uint8_t size);
+
     char * msgQueueBuffer;
     struct k_msgq msgQueue;
 
@@ -56,5 +57,10 @@ private:
 
     Timer * m_timers[10];
     uint32_t m_numTimers = 0;
+
+    /**
+     * Expose a single instance of the event loop.  
+     */
+    static EventLoop * m_instance;
 
 };
