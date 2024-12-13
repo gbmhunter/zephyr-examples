@@ -21,10 +21,6 @@ int main(void)
         LOG_INF("Running in event loop! thread: %s\n", k_thread_name_get(k_current_get()));
     });
 
-    // eventLoop.timer([]() {
-    //     LOG_INF("Timer event! thread: %s\n", k_thread_name_get(k_current_get()));
-    // }, 1000);
-
     while (true) {
         k_sleep(K_SECONDS(1));
     }

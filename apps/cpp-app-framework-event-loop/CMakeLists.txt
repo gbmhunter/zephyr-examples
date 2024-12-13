@@ -16,5 +16,5 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(etl)
 
-target_sources(app PRIVATE src/main.cpp src/EventLoop.cpp)
+target_sources(app PRIVATE src/main.cpp src/EventLoop.cpp src/Timer.cpp)
 target_link_libraries(app PRIVATE etl::etl)

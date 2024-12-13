@@ -6,14 +6,7 @@
 #include <etl/array.h>
 
 #include "Event.hpp"
-
-class Timer {
-public:
-    Timer(std::function<void()> fn, uint32_t ms) : fn(fn), ms(ms) {}
-private:
-    std::function<void()> fn;
-    uint32_t ms;
-};
+#include "Timer.hpp"
 
 class EventLoop {
 public:
@@ -29,6 +22,15 @@ public:
      */
     void runInLoop(std::function<void()> fn);
 
+    /**
+     * Create a timer.
+     * 
+     * NOT THREAD SAFE. Must be called from the event loop thread.
+     * 
+     * @param fn The function to call when the timer expires.
+     * @param ms The period of the timer in milliseconds.
+     * @return The timer object.
+     */
     Timer createTimer(std::function<void()> fn, uint32_t ms);
 
 private:
@@ -36,6 +38,9 @@ private:
     char * msgQueueBuffer;
     struct k_msgq msgQueue;
 
-    etl::array<uint32_t, 10> array;
+    // etl::array<uint32_t, 10> array;
+
+    Timer * m_timers[10];
+    uint32_t m_numTimers = 0;
 
 };

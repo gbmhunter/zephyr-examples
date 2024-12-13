@@ -4,6 +4,7 @@
 #include "Event.hpp"
 #include "EventLoop.hpp"
 #include "Constants.hpp"
+#include "Timer.hpp"
 
 LOG_MODULE_REGISTER(EventLoop, LOG_LEVEL_DBG);
 
@@ -32,24 +33,59 @@ void EventLoop::run() {
     LOG_INF("EventLoop run()");
     int rc = k_thread_name_set(k_current_get(), "EventLoop");
     __ASSERT(rc == 0, "Failed to set thread name. rc: %d", rc);
+
+    Timer timer = this->createTimer([]() {
+        LOG_INF("Timer expired!");
+    }, 1000);
+
     while (true) {
-        k_sleep(K_SECONDS(1));
+        // Iterate through all registered timers, and find the one that is expiring next (if any)
+        Timer * timerThatIsExpiringNext = nullptr;
+        for(uint32_t i = 0; i < this->m_numTimers; i++) {
+            Timer * timer = this->m_timers[i];
+            if (timer->isRunning()) {
+                if (timerThatIsExpiringNext == nullptr || timer->nextExpiryTime_ticks < timerThatIsExpiringNext->nextExpiryTime_ticks) {
+                    timerThatIsExpiringNext = timer;
+                }
+            }
+        }
+
+        // Convert the expiry time to a duration from now
+        // Calculate time to wait for next timeout event
+        k_timeout_t durationToWait = K_FOREVER;
+        int64_t uptime_ticks = k_uptime_ticks();
+        if (timerThatIsExpiringNext != nullptr) {
+            if (timerThatIsExpiringNext->nextExpiryTime_ticks <= uptime_ticks) {
+                durationToWait = K_NO_WAIT;
+                LOG_WRN("Timer already expired.");
+            } else {
+                durationToWait = K_TICKS(timerThatIsExpiringNext->nextExpiryTime_ticks - uptime_ticks);
+            }
+        }
+
         // Wait for events on message queue
         uint8_t data[MAX_MSG_SIZE_BYTES] = {0};
-        LOG_INF("Waiting for event...");
-        k_msgq_get(&msgQueue, data, K_FOREVER);
-        LOG_INF("Event received!");
-
-        // Convert to event
-        EventBase * event = reinterpret_cast<EventBase*>(data);
-        switch (event->m_id) {
-            case EventId::RUN_IN_LOOP:
-                // event->m_fn();
-                LOG_INF("Calling function...");
-                RunInLoopEvent * runInLoopEvent = reinterpret_cast<RunInLoopEvent*>(event);
-                runInLoopEvent->m_fn();
-                break;
+        int queueRc = k_msgq_get(&msgQueue, data, durationToWait);
+        if (queueRc == 0) {
+            // Convert to event
+            EventBase * event = reinterpret_cast<EventBase*>(data);
+            switch (event->m_id) {
+                case EventId::RUN_IN_LOOP:
+                    RunInLoopEvent * runInLoopEvent = reinterpret_cast<RunInLoopEvent*>(event);
+                    runInLoopEvent->m_fn();
+                    break;
+            }
         }
+        else {
+            // This should never be nullptr, as we should have set it to a valid timer before blocking
+            // on the message queue
+            __ASSERT_NO_MSG(timerThatIsExpiringNext != nullptr);
+            timerThatIsExpiringNext->expiryFn();
+            // Update timer. This will either stop the timer if it is a one-shot, or update the next expiry time
+            timerThatIsExpiringNext->updateAfterExpiry();
+        }
+
+        
     }
 }
 
@@ -68,4 +104,15 @@ void EventLoop::runInLoop(std::function<void()> fn) {
     // Create a run in loop event
     RunInLoopEvent event(fn);
     this->postEvent(&event, sizeof(event));
+}
+
+Timer EventLoop::createTimer(std::function<void()> fn, uint32_t ms) {
+    Timer timer;
+    timer.start(fn, ms);
+
+    // Add to list of timers
+    this->m_timers[this->m_numTimers] = &timer;
+    this->m_numTimers++;
+
+    return timer;
 }
