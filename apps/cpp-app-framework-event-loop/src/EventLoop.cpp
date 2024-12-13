@@ -28,16 +28,32 @@ EventLoop::EventLoop(z_thread_stack_element * threadStack, uint32_t threadStackS
                                     K_NO_WAIT);
 }
 
-
-
 void EventLoop::run() {
     LOG_INF("EventLoop run()");
+    int rc = k_thread_name_set(k_current_get(), "EventLoop");
+    __ASSERT(rc == 0, "Failed to set thread name. rc: %d", rc);
     while (true) {
         k_sleep(K_SECONDS(1));
+        // Wait for events on message queue
+        uint8_t data[MAX_MSG_SIZE_BYTES] = {0};
+        LOG_INF("Waiting for event...");
+        k_msgq_get(&msgQueue, data, K_FOREVER);
+        LOG_INF("Event received!");
+
+        // Convert to event
+        EventBase * event = reinterpret_cast<EventBase*>(data);
+        switch (event->m_id) {
+            case EventId::RUN_IN_LOOP:
+                // event->m_fn();
+                LOG_INF("Calling function...");
+                RunInLoopEvent * runInLoopEvent = reinterpret_cast<RunInLoopEvent*>(event);
+                runInLoopEvent->m_fn();
+                break;
+        }
     }
 }
 
-void EventLoop::postEvent(Event * event, uint8_t size) {
+void EventLoop::postEvent(EventBase * event, uint8_t size) {
         // Make sure event is not bigger than message size
     // static_assert(sizeof(T) <= MSG_SIZE_BYTES, "Event size is too big for message queue");
     __ASSERT(size <= MAX_MSG_SIZE_BYTES, "Event size of %u is bigger than the max. event size of %u.", size, MAX_MSG_SIZE_BYTES);
@@ -45,14 +61,11 @@ void EventLoop::postEvent(Event * event, uint8_t size) {
     // Convert to char array
     uint8_t data[MAX_MSG_SIZE_BYTES] = {0};
     memcpy(data, event, size);
-
-    // Log the data we are about to put on the queue
-    // Print each byte as hex
-    // LOG_DBG("Sending event to SM: ");
-    // for (int i = 0; i < MAX_MSG_SIZE_BYTES; i++) {
-    //     // data[i] = -2;
-    //     LOG_DBG("0x%02X", data[i]);
-    // }
-
     k_msgq_put(&msgQueue, data, K_NO_WAIT);
+}
+
+void EventLoop::scheduleRun(std::function<void()> fn) {
+    // Create a run in loop event
+    RunInLoopEvent event(fn);
+    this->postEvent(&event, sizeof(event));
 }

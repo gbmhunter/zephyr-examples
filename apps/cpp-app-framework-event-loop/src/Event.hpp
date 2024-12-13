@@ -2,31 +2,44 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <functional>
+// class EventId
+// {
+//     static size_t counter;
 
-class EventId
-{
-    static size_t counter;
+// public:
+//     template<typename T>
+//     static size_t value()
+//     {
+//         static size_t id = counter++;
+//         return id;
+//     }
+// };
 
+enum class EventId {
+    RUN_IN_LOOP,
+};
+
+class EventBase {
 public:
-    template<typename T>
-    static size_t value()
-    {
-        static size_t id = counter++;
-        return id;
+    EventId m_id;
+    const char * m_name;
+
+    // Event() {
+    //     this->id = 0;
+    // }
+
+    EventBase(EventId id, const char * name) {
+        this->m_id = id;
+        this->m_name = name;
     }
 };
 
-class Event {
+class RunInLoopEvent : public EventBase {
 public:
-    uint8_t id;
-    const char * m_name;
+    std::function<void()> m_fn;
 
-    Event() {
-        this->id = 0;
-    }
-
-    Event(uint8_t id, const char * name) {
-        this->id = id;
-        this->m_name = name;
+    RunInLoopEvent(std::function<void()> fn) : EventBase(EventId::RUN_IN_LOOP, "RunInLoopEvent") {
+        this->m_fn = fn;
     }
 };
