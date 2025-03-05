@@ -12,7 +12,8 @@ LedSm::LedSm(z_thread_stack_element * threadStack,
          uint32_t threadStackSize_B,
          void (*threadFnAdapter)(void *, void *, void *),
          StateMachineController * smc,
-         const char * name)
+         const char * name,
+         IGpio * gpio)
     :
         StateMachine(MAX_NUM_STATES, threadStack, threadStackSize_B, threadFnAdapter, smc, name),
         root(
@@ -35,6 +36,8 @@ LedSm::LedSm(z_thread_stack_element * threadStack,
 
     addState(&off);
     registerTimer(&timer);
+
+    this->gpio = gpio;
 
     // Setup initial transition
     setInitialTransition(&off);
@@ -90,6 +93,7 @@ void LedSm::Root_Exit() {
 
 void LedSm::Off_Entry() {
     LOG_DBG("%s called", __PRETTY_FUNCTION__);
+    gpio->setState(false);
 }
 
 void LedSm::Off_Event(Event* event) {
@@ -113,6 +117,8 @@ void LedSm::Off_Exit() {
 
 void LedSm::On_Entry() {
     LOG_DBG("%s called", __PRETTY_FUNCTION__);
+
+    gpio->setState(true);
 
     // Start timer
     TimerExpiryEvent event;

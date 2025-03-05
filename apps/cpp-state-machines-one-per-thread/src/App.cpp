@@ -37,7 +37,7 @@ void ledThreadFnAdapter(void *, void *, void *) {
     l_led->threadFn();
 }
 
-App::App()
+App::App(IGpio * gpio)
     :
     m_smc(),
     m_masterSm(masterThreadStack,
@@ -52,7 +52,8 @@ App::App()
             LED_THREAD_STACK_SIZE_B,
             &ledThreadFnAdapter,
             &m_smc,
-            "Led1Sm")
+            "Led1Sm",
+            gpio)
 {
 
     l_masterSm = &m_masterSm;

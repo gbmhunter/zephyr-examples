@@ -6,11 +6,12 @@ class App;
 #include "LedSm.hpp"
 #include "MasterSm.hpp"
 #include "SecondSm.hpp"
+#include "Gpio/IGpio.hpp"
 
 class App
 {
 public:
-    App();
+    App(IGpio * gpio);
     void run();
 
     StateMachineController * getSmc() { return &m_smc; }

@@ -6,12 +6,14 @@
 #include <zephyr/zbus/zbus.h>
 
 #include "App.hpp"
+#include "Gpio/GpioMock.hpp"
 
 LOG_MODULE_REGISTER(Main, LOG_LEVEL_DBG);
 
 int main(void)
 {
-    auto app = App();
+    GpioMock gpioMock;
+    auto app = App(&gpioMock);
     app.run();
     LOG_DBG("main() returning...\n");
 }

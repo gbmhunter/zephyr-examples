@@ -5,6 +5,7 @@
 
 #include <zephyr/kernel.h>
 
+#include "Gpio/IGpio.hpp"
 #include "StateMachineLibrary/StateMachine.hpp"
 
 //================================================================================================//
@@ -56,7 +57,8 @@ class LedSm: public StateMachine {
             uint32_t threadStackSize_B,
             void (*threadFnAdapter)(void *, void *, void *),
             StateMachineController * smc,
-            const char * name);
+            const char * name,
+            IGpio * gpio);
 
         void turnOn();
 
@@ -64,7 +66,7 @@ class LedSm: public StateMachine {
 
 
     private:
-
+        IGpio * gpio;
         State root;
         void Root_Entry();
         void Root_Event(Event* event);
